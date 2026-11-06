@@ -159,16 +159,25 @@
                 editorRef.current.focus(); document.execCommand(cmd, false, val); handleInput(); 
             };
 
-            const handleImageUpload = (e) => {
+            const handleImageUpload = async (e) => {
                 const file = e.target.files[0];
                 if (file) {
+                    // Panggil dialog prompt untuk meminta ukuran secara presisi
+                    const sizeInput = await showPrompt("Tentukan lebar gambar (Contoh: 250px, 50%, atau 100%):", "50%");
+                    const imgWidth = (sizeInput && sizeInput.trim() !== '') ? sizeInput.trim() : '50%';
+                    
                     const reader = new FileReader();
                     reader.onloadend = () => {
-                        const imgHTML = `<img src="${reader.result}" alt="Gambar" style="max-width: 100%; width: auto; max-height: 250px; border-radius: 8px; margin: 8px 0; object-fit: contain; display: block;" /><br/>`;
-                        editorRef.current.focus(); document.execCommand('insertHTML', false, imgHTML); handleInput();
+                        // PERBAIKAN: Ubah display menjadi inline-block agar tombol rata kiri/tengah/kanan (justify) dapat bekerja
+                        const imgHTML = `&nbsp;<img src="${reader.result}" alt="Gambar" style="width: ${imgWidth}; max-width: 100%; height: auto; border-radius: 8px; margin: 4px; object-fit: contain; display: inline-block; vertical-align: middle;" />&nbsp;`;
+                        editorRef.current.focus(); 
+                        document.execCommand('insertHTML', false, imgHTML); 
+                        handleInput();
                     };
                     reader.readAsDataURL(file);
                 }
+                // Reset input agar admin bisa mengunggah file yang sama dua kali jika perlu
+                e.target.value = null; 
             };
 
             const insertMath = (formula) => {
