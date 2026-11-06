@@ -2072,9 +2072,15 @@
                                             <input type="number" step="0.1" value={formData.points !== undefined ? formData.points : 4} onChange={e => setFormData({...formData, points: parseFloat(e.target.value)})} className="w-full p-3.5 border-2 border-slate-200 rounded-xl bg-white font-black text-primary focus:border-primary outline-none transition-colors text-center" />
                                         </div>
                                         <div>
+                                            <div>
                                             <label className="block text-[10px] font-bold text-slate-500 uppercase tracking-widest mb-2">Poin Penalti (Salah)</label>
                                             <input type="number" step="0.1" value={formData.penalty !== undefined ? formData.penalty : 0} onChange={e => setFormData({...formData, penalty: parseFloat(e.target.value)})} className="w-full p-3.5 border-2 border-slate-200 rounded-xl bg-white font-black text-rose-500 focus:border-primary outline-none transition-colors text-center" />
                                         </div>
+                                    </div>
+
+                                    <div>
+                                        <label className="block text-sm font-black text-slate-800 mb-3 border-b-2 border-slate-100 pb-2">Pertanyaan Utama</label>
+                                        <RichTextEditor value={formData.question} onChange={val => setFormData({...formData, question: val})} />
                                     </div>
 
                                     {formData.type === 'MCQ' && (
