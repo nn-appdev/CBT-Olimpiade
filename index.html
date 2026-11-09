@@ -954,7 +954,9 @@
           };
 
           const AdminLogin = () => {
-            const [u, setU] = useState(''); const [p, setP] = useState('');
+            const [u, setU] = useState(''); 
+            const [p, setP] = useState('');
+            const [showP, setShowP] = useState(false); // State untuk mengatur visibilitas password
             const { showAlert } = useContext(DialogContext);
 
             const handleLogin = async (e) => {
@@ -971,8 +973,17 @@
               <div className="min-h-screen bg-slate-900 flex justify-center items-center p-4">
                 <form onSubmit={handleLogin} className="bg-white p-10 rounded-3xl max-w-sm w-full shadow-2xl border-t-[8px] border-primary animate-fade-in">
                    <div className="text-center mb-8"><div className="w-16 h-16 bg-primary/10 text-primary rounded-2xl flex items-center justify-center mx-auto mb-4"><Settings size={30}/></div><h1 className="text-2xl font-black text-slate-800 tracking-tight">Admin Area</h1></div>
+                   
                    <input type="text" placeholder="Username" value={u} onChange={e=>setU(e.target.value)} className="w-full p-4 border-2 border-slate-200 rounded-xl mb-4 font-bold text-slate-800 focus:border-primary outline-none transition-colors" required/>
-                   <input type="password" placeholder="Password" value={p} onChange={e=>setP(e.target.value)} className="w-full p-4 border-2 border-slate-200 rounded-xl mb-8 font-bold text-slate-800 focus:border-primary outline-none transition-colors" required/>
+                   
+                   {/* Kontainer Relatif untuk menempatkan Ikon Mata */}
+                   <div className="relative mb-8">
+                       <input type={showP ? "text" : "password"} placeholder="Password" value={p} onChange={e=>setP(e.target.value)} className="w-full p-4 border-2 border-slate-200 rounded-xl font-bold text-slate-800 focus:border-primary outline-none transition-colors pr-14" required/>
+                       <button type="button" onClick={()=>setShowP(!showP)} className="absolute right-4 top-1/2 -translate-y-1/2 text-slate-400 hover:text-primary transition-colors focus:outline-none" title={showP ? "Sembunyikan Sandi" : "Tampilkan Sandi"}>
+                           <i className={`fas ${showP ? 'fa-eye-slash' : 'fa-eye'} text-xl`}></i>
+                       </button>
+                   </div>
+
                    <button type="submit" className="w-full py-4 bg-primary text-white font-black rounded-xl hover:bg-primary-700 shadow-lg transition-all">Akses Sistem</button>
                    <button type="button" onClick={()=>navigate('/')} className="w-full mt-6 text-sm text-slate-400 font-bold hover:text-slate-600 transition-colors">Kembali ke Depan</button>
                 </form>
@@ -1905,6 +1916,7 @@
                      id: formData.id || `q${Date.now()}`, 
                      type: formData.type, 
                      folder: formData.folder || filterFolder, 
+                     difficulty: 'Sedang', // Penyelamat wajib agar tidak ditolak oleh skema tabel lama
                      points: formData.points !== undefined ? formData.points : 4,
                      penalty: formData.penalty !== undefined ? formData.penalty : 0,
                      question: formData.question 
@@ -1916,11 +1928,21 @@
                      payload.correctAnswer = formData.correctAnswer;
                  }
 
-                 if(!formData.id) await db.from('questions').insert([payload]);
-                 else await db.from('questions').update(payload).eq('id', payload.id);
+                 // Pengecekan error absolut, akan melempar peringatan jika Supabase menolak
+                 if(!formData.id) {
+                     const { error } = await db.from('questions').insert([payload]);
+                     if (error) throw error;
+                 } else {
+                     const { error } = await db.from('questions').update(payload).eq('id', payload.id);
+                     if (error) throw error;
+                 }
                  
                  setView('list'); setIsPreviewMode(false); await fetchSupabaseData(); 
-               } catch (err) { await showAlert("Gagal menyimpan. Pastikan Kolom 'penalty' sudah dijalankan di Supabase."); } 
+                 await showAlert("Soal berhasil disimpan ke Database!");
+               } catch (err) { 
+                 // Menampilkan pesan error asli dari server agar Anda tahu letak kesalahannya
+                 await showAlert("GAGAL MENYIMPAN!\n\nPesan Server: " + err.message + "\n\nAnalisis: Pastikan Anda SUDAH menjalankan SQL 'ALTER TABLE questions ADD COLUMN penalty NUMERIC DEFAULT 0;' di Supabase."); 
+               } 
                finally { setIsSaving(false); }
             };
 
