@@ -1374,7 +1374,7 @@
                  const school = prompt("Asal Sekolah:") || organizerName;
                  const folderStr = availableFolders.join(", ");
                  const jenis = prompt(`Ketik Folder Soal/Peminatan (${folderStr}):`, availableFolders[0]) || availableFolders[0];
-                 const newCode = `TKA-${Math.random().toString(36).substring(2,6).toUpperCase()}`;
+                 const newCode = `MEA-${Math.random().toString(36).substring(2,6).toUpperCase()}`;
                  setIsSaving(true);
                  try { const db = await getSupabase(); await db.from('tokens').insert([{ code: newCode, status: 'AVAILABLE', participant_name: name, participant_school: school, jenis_soal: jenis, generatedAt: new Date().toISOString() }]); fetchSupabaseData(); } catch(e) { alert(e.message); }
                  setIsSaving(false);
