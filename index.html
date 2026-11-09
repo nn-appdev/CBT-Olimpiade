@@ -1420,6 +1420,78 @@
                  setIsSaving(false);
              };
 
+             const handleFileSelect = (e) => {
+                 setFileUploadError('');
+                 const file = e.target.files[0];
+                 if (file) {
+                     if (!file.name.toLowerCase().endsWith('.csv')) {
+                         setFileUploadError('Hanya file berekstensi .csv yang diperbolehkan.');
+                         setImportFile(null);
+                     } else {
+                         setImportFile(file);
+                     }
+                 } else {
+                     setImportFile(null);
+                 }
+             };
+
+             const processImport = async () => {
+                 if (!importFile) return setFileUploadError('Pilih file CSV terlebih dahulu.');
+                 setIsImporting(true); setFileUploadError('');
+                 
+                 const reader = new FileReader();
+                 reader.onload = async (e) => {
+                     try {
+                         const text = e.target.result;
+                         const rows = text.split('\n').map(row => row.trim()).filter(row => row.length > 0);
+                         if (rows.length < 2) throw new Error("File kosong atau tidak ada baris data peserta.");
+
+                         const headers = rows[0].split(',').map(h => h.trim().toUpperCase().replace(/^\uFEFF/, '').replace(/^"|"$/g, ''));
+                         const expectedHeaders = ['NAMA_PESERTA', 'ASAL_SEKOLAH_ATAU_KELAS', 'FOLDER_SOAL'];
+                         if (!expectedHeaders.every(h => headers.includes(h))) throw new Error("Format Header (Baris 1) tidak sesuai dengan templat. Pastikan Anda menggunakan templat yang benar.");
+
+                         const newTokens = [];
+                         const nameIdx = headers.indexOf('NAMA_PESERTA');
+                         const schoolIdx = headers.indexOf('ASAL_SEKOLAH_ATAU_KELAS');
+                         const folderIdx = headers.indexOf('FOLDER_SOAL');
+
+                         for (let i = 1; i < rows.length; i++) {
+                             const cols = rows[i].split(',');
+                             if (cols.length > 0) {
+                                 const getVal = (idx) => cols[idx] ? cols[idx].replace(/^"|"$/g, '').trim() : '';
+                                 const name = getVal(nameIdx);
+                                 
+                                 if (name) {
+                                     newTokens.push({
+                                         code: `TKA-${Math.random().toString(36).substring(2,6).toUpperCase()}`,
+                                         status: 'AVAILABLE',
+                                         participant_name: name,
+                                         participant_school: getVal(schoolIdx) || organizerName,
+                                         jenis_soal: getVal(folderIdx) || 'Utama',
+                                         "generatedAt": new Date().toISOString()
+                                     });
+                                 }
+                             }
+                         }
+                         if(newTokens.length === 0) throw new Error("Tidak ada data valid yang bisa diekstrak dari CSV.");
+                         
+                         const db = await getSupabase();
+                         const { error } = await db.from('tokens').insert(newTokens);
+                         if (error) throw error;
+
+                         await fetchSupabaseData();
+                         setShowImport(false); setImportFile(null);
+                         alert(`Berhasil mengimpor ${newTokens.length} data peserta ke dalam sistem!`);
+                     } catch (err) {
+                         setFileUploadError(err.message);
+                     } finally {
+                         setIsImporting(false);
+                     }
+                 };
+                 reader.onerror = () => { setFileUploadError("Gagal membaca file dari perangkat Anda."); setIsImporting(false); };
+                 reader.readAsText(importFile);
+             };
+
              return (
                <AdminLayout title="Token Ujian">
                  <div className="bg-white p-4 rounded-xl border mb-6 flex flex-wrap gap-3 items-center shadow-sm">
@@ -1466,7 +1538,7 @@
                  {showImport && (
                      <div className="fixed inset-0 modal-overlay z-50 flex items-center justify-center p-4">
                         <div className="bg-white rounded-xl shadow-xl w-full max-w-lg p-5">
-                            <div className="flex justify-between items-center mb-4"><h3 className="font-bold text-slate-800 text-lg">Impor Data Peserta</h3><button onClick={()=>setShowImport(false)} className="text-slate-400 hover:text-slate-800 transition-colors"><X size={20}/></button></div>
+                            <div className="flex justify-between items-center mb-4"><h3 className="font-bold text-slate-800 text-lg">Impor Data Peserta</h3><button onClick={()=>{setShowImport(false); setImportFile(null); setFileUploadError('');}} className="text-slate-400 hover:text-slate-800 transition-colors"><X size={20}/></button></div>
                             
                             <div className="bg-blue-50 border border-blue-200 rounded-xl p-4 mb-4 text-sm font-medium text-blue-800">
                                 <p className="mb-2"><i className="fas fa-info-circle mr-1"></i> Gunakan templat CSV ini. Pastikan Anda tidak merubah nama kolom (Header).</p>
@@ -1483,9 +1555,15 @@
                             </div>
 
                             <label className="block text-[10px] font-bold text-slate-500 uppercase tracking-widest mb-2">Unggah Berkas CSV</label>
-                            <input type="file" accept=".csv" onChange={()=>{}} className="w-full p-4 border-2 border-dashed border-slate-300 rounded-xl bg-slate-50 text-sm font-medium focus:border-primary outline-none cursor-pointer file:mr-4 file:py-2 file:px-4 file:rounded-md file:border-0 file:text-sm file:font-black file:bg-blue-100 file:text-blue-700 hover:file:bg-blue-200 transition-all"/>
+                            <input type="file" accept=".csv" onChange={handleFileSelect} className="w-full p-4 border-2 border-dashed border-slate-300 rounded-xl bg-slate-50 text-sm font-medium focus:border-primary outline-none cursor-pointer file:mr-4 file:py-2 file:px-4 file:rounded-md file:border-0 file:text-sm file:font-black file:bg-blue-100 file:text-blue-700 hover:file:bg-blue-200 transition-all"/>
                             
                             {fileUploadError && <p className="mt-3 text-xs font-bold text-rose-600 bg-rose-50 p-2 rounded border border-rose-200">{fileUploadError}</p>}
+
+                            {importFile && !fileUploadError && (
+                                <button onClick={processImport} disabled={isImporting} className="w-full mt-5 bg-emerald-600 text-white font-black py-3.5 rounded-xl hover:bg-emerald-700 shadow-md transition-all disabled:opacity-50">
+                                    {isImporting ? 'Mengekstrak dan Mengunggah...' : 'Unggah Data Peserta Sekarang'}
+                                </button>
+                            )}
                         </div>
                      </div>
                  )}
