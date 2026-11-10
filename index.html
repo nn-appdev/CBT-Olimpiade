@@ -1291,6 +1291,7 @@
              
              const [selectedTokens, setSelectedTokens] = useState([]);
              const [downloadFilter, setDownloadFilter] = useState('Semua');
+             const [filterKategori, setFilterKategori] = useState('Semua Kategori');
              const [editFilter, setEditFilter] = useState('Semua');
              const [sortOrder, setSortOrder] = useState('DEFAULT');
 
@@ -1301,11 +1302,31 @@
              // Menarik nama-nama Folder yang ada di Bank Soal untuk Dropdown Peminatan
              const availableFolders = [...new Set([...questions.map(q => q.folder || 'Utama'), ...tokens.filter(t => t.code && t.code.startsWith('SYS_FOLDER_')).map(t => t.status), 'Utama'])];
 
-             let displayedTokens = downloadFilter === 'Semua' ? [...actualTokens] : actualTokens.filter(t => t.participant_school === downloadFilter);
+             let displayedTokens = actualTokens.filter(t => {
+                 const matchSchool = downloadFilter === 'Semua' || t.participant_school === downloadFilter;
+                 let matchKategori = true;
+                 if (filterKategori !== 'Semua Kategori') {
+                     const txt = `${t.participant_school || ''} ${t.jenis_soal || ''}`.toUpperCase();
+                     if (filterKategori === 'SD/MI') matchKategori = /\b(SD|SDN|MI|MIS|MIM)\b/.test(txt);
+                     else if (filterKategori === 'SMP/MTS') matchKategori = /\b(SMP|SMPN|MTS|MTsN)\b/.test(txt);
+                     else if (filterKategori === 'SMA/SMK/MA') matchKategori = /\b(SMA|SMAN|SMK|SMKN|MA|MAN)\b/.test(txt);
+                 }
+                 return matchSchool && matchKategori;
+             });
              if (sortOrder === 'NAME_ASC') displayedTokens.sort((a,b) => (a.participant_name || '').localeCompare(b.participant_name || ''));
              else if (sortOrder === 'NAME_DESC') displayedTokens.sort((a,b) => (b.participant_name || '').localeCompare(a.participant_name || ''));
 
-             let displayedMassEditTokens = editFilter === 'Semua' ? [...massEditTokens] : massEditTokens.filter(t => t.participant_school === editFilter);
+             let displayedMassEditTokens = massEditTokens.filter(t => {
+                 const matchSchool = editFilter === 'Semua' || t.participant_school === editFilter;
+                 let matchKategori = true;
+                 if (filterKategori !== 'Semua Kategori') {
+                     const txt = `${t.participant_school || ''} ${t.jenis_soal || ''}`.toUpperCase();
+                     if (filterKategori === 'SD/MI') matchKategori = /\b(SD|SDN|MI|MIS|MIM)\b/.test(txt);
+                     else if (filterKategori === 'SMP/MTS') matchKategori = /\b(SMP|SMPN|MTS|MTsN)\b/.test(txt);
+                     else if (filterKategori === 'SMA/SMK/MA') matchKategori = /\b(SMA|SMAN|SMK|SMKN|MA|MAN)\b/.test(txt);
+                 }
+                 return matchSchool && matchKategori;
+             });
              if (sortOrder === 'NAME_ASC') displayedMassEditTokens.sort((a,b) => (a.participant_name || '').localeCompare(b.participant_name || ''));
              else if (sortOrder === 'NAME_DESC') displayedMassEditTokens.sort((a,b) => (b.participant_name || '').localeCompare(a.participant_name || ''));
 
@@ -1506,6 +1527,12 @@
                             <div className="flex flex-wrap items-center gap-2 bg-slate-50 border border-slate-200 rounded-xl p-1 ml-auto">
                                 <select value={sortOrder} onChange={e=>setSortOrder(e.target.value)} className="bg-white border border-slate-300 text-sm font-medium rounded-lg px-2 py-2.5 outline-none focus:border-blue-500 cursor-pointer">
                                     <option value="DEFAULT">Urutan Acak</option><option value="NAME_ASC">Nama A-Z</option><option value="NAME_DESC">Nama Z-A</option>
+                                </select>
+                                <select value={filterKategori} onChange={(e) => {setFilterKategori(e.target.value); setSelectedTokens([]);}} className="bg-white border border-slate-300 text-sm font-medium rounded-lg px-2 py-2.5 outline-none focus:border-blue-500 cursor-pointer">
+                                    <option value="Semua Kategori">Kategori Jenjang</option>
+                                    <option value="SD/MI">SD / MI</option>
+                                    <option value="SMP/MTS">SMP / MTs</option>
+                                    <option value="SMA/SMK/MA">SMA / SMK / MA</option>
                                 </select>
                                 <select value={downloadFilter} onChange={(e) => {setDownloadFilter(e.target.value); setSelectedTokens([]);}} className="bg-white border border-slate-300 text-sm font-medium rounded-lg px-2 py-2.5 outline-none focus:border-blue-500 cursor-pointer">
                                     <option value="Semua">Semua Kelas/Sekolah</option>
