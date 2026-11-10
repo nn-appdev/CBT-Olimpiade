@@ -1660,6 +1660,7 @@
              const [filterSchool, setFilterSchool] = useState('Semua');
              const [filterFolder, setFilterFolder] = useState('Semua');
              const [filterDate, setFilterDate] = useState('Semua');
+             const [filterKategori, setFilterKategori] = useState('Semua Kategori');
              const [sortOrder, setSortOrder] = useState('DEFAULT');
              const [selectedResults, setSelectedResults] = useState([]);
              const [isDeleting, setIsDeleting] = useState(false);
@@ -1680,7 +1681,16 @@
                  const matchSchool = filterSchool === 'Semua' || r.participant?.school === filterSchool;
                  const matchFolder = filterFolder === 'Semua' || getResultFolder(r) === filterFolder;
                  const matchDate = filterDate === 'Semua' || new Date(r.startTime).toLocaleDateString('id-ID') === filterDate;
-                 return matchSchool && matchFolder && matchDate;
+                 
+                 let matchKategori = true;
+                 if (filterKategori !== 'Semua Kategori') {
+                     const txt = `${r.participant?.school || ''} ${getResultFolder(r) || ''}`.toUpperCase();
+                     if (filterKategori === 'SD/MI') matchKategori = /\b(SD|SDN|MI|MIS|MIM)\b/.test(txt);
+                     else if (filterKategori === 'SMP/MTS') matchKategori = /\b(SMP|SMPN|MTS|MTsN)\b/.test(txt);
+                     else if (filterKategori === 'SMA/SMK/MA') matchKategori = /\b(SMA|SMAN|SMK|SMKN|MA|MAN)\b/.test(txt);
+                 }
+
+                 return matchSchool && matchFolder && matchDate && matchKategori;
              });
 
              if (sortOrder === 'NAME_ASC') processedResults.sort((a, b) => (a.participant?.name || '').localeCompare(b.participant?.name || ''));
@@ -1863,16 +1873,19 @@
                  <div className="mb-6 flex flex-col xl:flex-row justify-between items-start xl:items-center gap-4 bg-white p-4 rounded-xl border shadow-sm">
                      <div className="flex flex-wrap items-center gap-2 w-full xl:w-auto">
                          <div className="flex flex-wrap items-center gap-2 bg-slate-50 border border-slate-200 p-1.5 rounded-lg w-full sm:w-auto">
+                             <select value={filterKategori} onChange={e=>{setFilterKategori(e.target.value); setSelectedResults([]);}} className="border-none py-1 px-2 text-sm bg-transparent font-black outline-none cursor-pointer text-rose-700">
+                                 <option value="Semua Kategori">Jenjang: Semua</option>
+                                 <option value="SD/MI">SD / MI</option>
+                                 <option value="SMP/MTS">SMP / MTs</option>
+                                 <option value="SMA/SMK/MA">SMA / SMK / MA</option>
+                             </select>
+                             <div className="w-px h-5 bg-slate-300 hidden sm:block"></div>
                              <select value={filterSchool} onChange={e=>{setFilterSchool(e.target.value); setSelectedResults([]);}} className="border-none py-1 px-2 text-sm bg-transparent font-semibold outline-none cursor-pointer text-slate-700">
                                  {schoolList.map(s => <option key={s} value={s}>{s === 'Semua' ? 'Sekolah: Semua' : s}</option>)}
                              </select>
                              <div className="w-px h-5 bg-slate-300 hidden sm:block"></div>
                              <select value={filterFolder} onChange={e=>{setFilterFolder(e.target.value); setSelectedResults([]);}} className="border-none py-1 px-2 text-sm bg-transparent font-semibold outline-none cursor-pointer text-blue-700">
                                  {folderList.map(f => <option key={f} value={f}>{f === 'Semua' ? 'Kategori: Semua' : f}</option>)}
-                             </select>
-                             <div className="w-px h-5 bg-slate-300 hidden sm:block"></div>
-                             <select value={filterDate} onChange={e=>{setFilterDate(e.target.value); setSelectedResults([]);}} className="border-none py-1 px-2 text-sm bg-transparent font-semibold outline-none cursor-pointer text-emerald-700">
-                                 {dateList.map(d => <option key={d} value={d}>{d === 'Semua' ? 'Tanggal: Semua' : d}</option>)}
                              </select>
                          </div>
                          <select value={sortOrder} onChange={e=>setSortOrder(e.target.value)} className="border border-slate-300 rounded-lg p-2 text-sm bg-white font-semibold outline-none cursor-pointer">
