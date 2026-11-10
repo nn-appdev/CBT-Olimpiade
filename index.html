@@ -198,13 +198,16 @@
                         <div className="w-px h-5 bg-slate-300 mx-1"></div>
                         <select onChange={(e) => { if(e.target.value) { insertMath(e.target.value); e.target.value = ''; } }} className="h-8 px-2 bg-white hover:bg-slate-50 border border-slate-300 rounded text-xs font-bold text-primary outline-none cursor-pointer shadow-sm">
                             <option value="">+ Rumus Cepat</option>
+                            <option value="m">Variabel (m)</option>
+                            <option value="<">Kurang Dari (<)</option>
+                            <option value=">">Lebih Dari (>)</option>
+                            <option value="\le">Kurang / Sama (≤)</option>
+                            <option value="\ge">Lebih / Sama (≥)</option>
                             <option value="a^x">Pangkat (a^x)</option>
                             <option value="\sqrt{x}">Akar (√x)</option>
                             <option value="\frac{a}{b}">Pecahan (a/b)</option>
                             <option value="\log_{a}{b}">Logaritma (log_a b)</option>
                             <option value="|x|">Nilai Mutlak (|x|)</option>
-                            <option value="\le">Kurang / Sama (≤)</option>
-                            <option value="\ge">Lebih / Sama (≥)</option>
                             <option value="\pi">Phi (π)</option>
                             <option value="\times">Kali (×)</option>
                         </select>
