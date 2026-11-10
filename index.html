@@ -2364,8 +2364,8 @@
                                  <div className="mt-4 pt-3 border-t border-slate-100">
                                      {q.type === 'MCQ' && (
                                          <div className="grid grid-cols-1 md:grid-cols-2 gap-2">
-                                             {(q.options||[]).map(o => (
-                                                 <div key={o.id} className={`p-3 rounded-lg border text-sm flex items-start ${q.correctAnswer === o.id ? 'bg-success/10 border-success/30 text-success-800 font-bold' : 'bg-slate-50 border-slate-200 text-slate-600'}`}>
+                                             {(q.options||[]).map((o, optIdx, arr) => (
+                                                 <div key={o.id} className={`p-3 rounded-lg border text-sm flex items-start ${q.correctAnswer === o.id ? 'bg-success/10 border-success/30 text-success-800 font-bold' : 'bg-slate-50 border-slate-200 text-slate-600'} ${optIdx === arr.length - 1 && arr.length % 2 !== 0 ? 'md:col-span-2' : ''}`}>
                                                      <span className="mr-2">{o.id}.</span> <div dangerouslySetInnerHTML={{__html: o.text}}></div>
                                                  </div>
                                              ))}
