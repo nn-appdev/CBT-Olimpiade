@@ -198,13 +198,15 @@
                         <div className="w-px h-5 bg-slate-300 mx-1"></div>
                         <select onChange={(e) => { if(e.target.value) { insertMath(e.target.value); e.target.value = ''; } }} className="h-8 px-2 bg-white hover:bg-slate-50 border border-slate-300 rounded text-xs font-bold text-primary outline-none cursor-pointer shadow-sm">
                             <option value="">+ Rumus Cepat</option>
-                            <option value="x^2">Kuadrat (x²)</option>
+                            <option value="a^x">Pangkat (a^x)</option>
                             <option value="\sqrt{x}">Akar (√x)</option>
-                            <option value="\sqrt[n]{x}">Akar Pangkat (ⁿ√x)</option>
-                            <option value="\frac{x}{y}">Pecahan (x/y)</option>
+                            <option value="\frac{a}{b}">Pecahan (a/b)</option>
+                            <option value="\log_{a}{b}">Logaritma (log_a b)</option>
+                            <option value="|x|">Nilai Mutlak (|x|)</option>
+                            <option value="\le">Kurang / Sama (≤)</option>
+                            <option value="\ge">Lebih / Sama (≥)</option>
                             <option value="\pi">Phi (π)</option>
                             <option value="\times">Kali (×)</option>
-                            <option value="\div">Bagi (÷)</option>
                         </select>
                         <button onMouseDown={async (e)=>{if(e) e.preventDefault(); const f = await showPrompt("Ketik manual kode LaTeX:"); if(f) insertMath(f);}} type="button" className="h-8 px-2 ml-1 text-slate-700 hover:bg-slate-200 rounded flex items-center text-xs font-semibold"><Calculator size={14} className="mr-1 text-primary"/> Manual</button>
                         <input type="file" ref={fileInputRef} onChange={handleImageUpload} accept="image/*" className="hidden" />
@@ -2026,7 +2028,7 @@
             const setView = (v) => { window.savedAdminView = v; setViewLocal(v); };
             const setFilterFolder = (f) => { window.savedAdminFolder = f; setFilterFolderLocal(f); };
 
-            const defaultMCQ = { id: '', type: 'MCQ', folder: filterFolder, points: 4, penalty: 0, question: '', options: [{id:'A', text:''}, {id:'B', text:''}, {id:'C', text:''}, {id:'D', text:''}], correctAnswer: 'A' };
+            const defaultMCQ = { id: '', type: 'MCQ', folder: filterFolder, points: 4, penalty: 0, question: '', options: [{id:'A', text:''}, {id:'B', text:''}, {id:'C', text:''}, {id:'D', text:''}, {id:'E', text:''}], correctAnswer: 'A' };
             const defaultSHORT = { id: '', type: 'SHORT_ANSWER', folder: filterFolder, points: 4, penalty: 0, question: '', correctAnswer: '' };
             const defaultESSAY = { id: '', type: 'ESSAY', folder: filterFolder, points: 4, penalty: 0, question: '', correctAnswer: '' };
 
@@ -2246,7 +2248,7 @@
                                             ))}
                                             <div className="bg-success/10 p-6 rounded-2xl border border-success/20 flex flex-col sm:flex-row items-center justify-between gap-4">
                                                 <label className="font-black text-success-800 uppercase tracking-widest text-sm">Kunci Jawaban Benar:</label>
-                                                <select value={formData.correctAnswer} onChange={e => setFormData({...formData, correctAnswer: e.target.value})} className="p-3 border-2 border-success rounded-xl font-black text-success w-32 text-center bg-white outline-none cursor-pointer text-xl"><option value="A">A</option><option value="B">B</option><option value="C">C</option><option value="D">D</option></select>
+                                                <select value={formData.correctAnswer} onChange={e => setFormData({...formData, correctAnswer: e.target.value})} className="p-3 border-2 border-success rounded-xl font-black text-success w-32 text-center bg-white outline-none cursor-pointer text-xl"><option value="A">A</option><option value="B">B</option><option value="C">C</option><option value="D">D</option><option value="E">E</option></select>
                                             </div>
                                         </div>
                                     )}
