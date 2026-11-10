@@ -201,6 +201,12 @@
                             <option value="x">Variabel (x)</option>
                             <option value="y">Variabel (y)</option>
                             <option value="m">Variabel (m)</option>
+                            <option value="+">Tambah (+)</option>
+                            <option value="-">Kurang (-)</option>
+                            <option value="=">Sama Dengan (=)</option>
+                            <option value="\times">Kali Silang (×)</option>
+                            <option value="\cdot">Kali Titik (⋅)</option>
+                            <option value="\div">Bagi (÷)</option>
                             <option value="<">Kurang Dari (&lt;)</option>
                             <option value=">">Lebih Dari (&gt;)</option>
                             <option value="\le">Kurang / Sama (≤)</option>
@@ -211,7 +217,6 @@
                             <option value="\log_{a}{b}">Logaritma (log_a b)</option>
                             <option value="|x|">Nilai Mutlak (|x|)</option>
                             <option value="\pi">Phi (π)</option>
-                            <option value="\times">Kali (×)</option>
                         </select>
                         <button onMouseDown={async (e)=>{if(e) e.preventDefault(); const f = await showPrompt("Ketik manual kode LaTeX:"); if(f) insertMath(f);}} type="button" className="h-8 px-2 ml-1 text-slate-700 hover:bg-slate-200 rounded flex items-center text-xs font-semibold"><Calculator size={14} className="mr-1 text-primary"/> Manual</button>
                         <input type="file" ref={fileInputRef} onChange={handleImageUpload} accept="image/*" className="hidden" />
