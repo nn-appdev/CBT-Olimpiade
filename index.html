@@ -1496,7 +1496,7 @@
                          .token-box .token { font-size: 15px; font-weight: 900; color: #2563eb; letter-spacing: 2px; font-family: monospace; }
                          @media print { body { -webkit-print-color-adjust: exact; print-color-adjust: exact; } }
                      </style></head><body>${cardsHTML}
-                     <script>window.onload = function() { setTimeout(function() { window.print(); window.close(); }, 500); }</script>
+                     <script>window.onload = function() { setTimeout(function() { window.print(); window.close(); }, 500); }<${'/'}script>
                      </body></html>`;
                  printWindow.document.open(); printWindow.document.write(htmlContent); printWindow.document.close();
              };
