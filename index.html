@@ -1405,13 +1405,18 @@
              };
 
              const addManual = async () => {
-                 const name = prompt("Nama Peserta:"); if (!name) return;
-                 const school = prompt("Asal Sekolah:") || organizerName;
+                 const name = prompt("Nama Peserta (Wajib):"); if (!name) return;
+                 const school = prompt("Asal Sekolah:", organizerName) || organizerName;
+                 const jenjang = prompt("Kategori Jenjang (Ketik: SD/MI, SMP/MTS, atau SMA/SMK/MA):", "SD/MI") || "SD/MI";
                  const folderStr = availableFolders.join(", ");
                  const jenis = prompt(`Ketik Folder Soal/Peminatan (${folderStr}):`, availableFolders[0]) || availableFolders[0];
                  const newCode = `MEA-${Math.random().toString(36).substring(2,6).toUpperCase()}`;
                  setIsSaving(true);
-                 try { const db = await getSupabase(); await db.from('tokens').insert([{ code: newCode, status: 'AVAILABLE', participant_name: name, participant_school: school, jenis_soal: jenis, generatedAt: new Date().toISOString() }]); fetchSupabaseData(); } catch(e) { alert(e.message); }
+                 try { 
+                     const db = await getSupabase(); 
+                     await db.from('tokens').insert([{ code: newCode, status: 'AVAILABLE', participant_name: name, participant_school: school, kategori_jenjang: jenjang.toUpperCase(), jenis_soal: jenis, generatedAt: new Date().toISOString() }]); 
+                     fetchSupabaseData(); 
+                 } catch(e) { alert(e.message); }
                  setIsSaving(false);
              };
 
@@ -1440,7 +1445,7 @@
                  setIsSaving(true);
                  try {
                      const db = await getSupabase();
-                     await db.from('tokens').upsert(massEditTokens.map(t => ({ code: t.code, status: t.status, participant_name: t.participant_name, participant_school: t.participant_school, jenis_soal: t.jenis_soal })));
+                     await db.from('tokens').upsert(massEditTokens.map(t => ({ code: t.code, status: t.status, participant_name: t.participant_name, participant_school: t.participant_school, kategori_jenjang: t.kategori_jenjang, jenis_soal: t.jenis_soal })));
                      fetchSupabaseData(); setIsMassEdit(false); setSelectedTokens([]); alert("Data berhasil diperbarui!");
                  } catch(e) { alert(e.message); }
                  setIsSaving(false);
@@ -1634,7 +1639,14 @@
                                             <td className="p-3 text-center"><input type="checkbox" className="w-4 h-4 cursor-pointer accent-blue-600 rounded" checked={selectedTokens.includes(t.code)} onChange={() => handleSelectToken(t.code)} /></td>
                                             <td className="p-3 text-center text-slate-500 font-semibold">{idx+1}</td>
                                             <td className="p-2"><input type="text" value={t.participant_name || ''} onChange={e=>handleMassEditChange(originalIndex, 'participant_name', e.target.value)} className="w-full p-2 border border-blue-200 rounded text-sm outline-none focus:ring-1"/></td>
-<td className="p-2"><input type="text" value={t.participant_school || ''} onChange={e=>handleMassEditChange(originalIndex, 'participant_school', e.target.value)} className="w-full p-2 border border-blue-200 rounded text-sm outline-none focus:ring-1"/></td>
+                                            <td className="p-2"><input type="text" value={t.participant_school || ''} onChange={e=>handleMassEditChange(originalIndex, 'participant_school', e.target.value)} className="w-full p-2 border border-blue-200 rounded text-sm outline-none focus:ring-1"/></td>
+                                            <td className="p-2">
+                                                <select value={t.kategori_jenjang || 'SD/MI'} onChange={e=>handleMassEditChange(originalIndex, 'kategori_jenjang', e.target.value)} className="w-full p-2 border border-blue-200 rounded text-[10px] font-black text-rose-600 outline-none cursor-pointer bg-white">
+                                                    <option value="SD/MI">SD/MI</option>
+                                                    <option value="SMP/MTS">SMP/MTs</option>
+                                                    <option value="SMA/SMK/MA">SMA/SMK/MA</option>
+                                                </select>
+                                            </td>
                                             <td className="p-2">
                                                 <select value={t.jenis_soal || 'Utama'} onChange={e=>handleMassEditChange(originalIndex, 'jenis_soal', e.target.value)} className="w-full p-2 border border-blue-200 rounded text-sm outline-none font-bold text-blue-700 cursor-pointer bg-white">
                                                     {availableFolders.map(f => <option key={f} value={f}>{f}</option>)}
