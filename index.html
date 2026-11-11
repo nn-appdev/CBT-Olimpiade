@@ -1441,6 +1441,66 @@
                  setMassEditTokens(updated);
              };
 
+             const handleBulkEditJenjang = (jenjang) => {
+                 if (selectedTokens.length === 0) return alert("Pilih baris terlebih dahulu dengan mencentang kotak di kiri!");
+                 const updated = massEditTokens.map(t => selectedTokens.includes(t.code) ? { ...t, kategori_jenjang: jenjang } : t);
+                 setMassEditTokens(updated);
+             };
+
+             const cetakKartuUjian = () => {
+                 if (displayedTokens.length === 0) return alert("Tidak ada data peserta untuk dicetak.");
+                 const printWindow = window.open('', '_blank');
+                 let cardsHTML = '';
+                 displayedTokens.forEach((t) => {
+                     const bgLogo = schoolLogo || 'https://cdn-icons-png.flaticon.com/512/3135/3135692.png';
+                     cardsHTML += `
+                         <div class="card">
+                             <div class="header">
+                                 <img src="${bgLogo}" alt="Logo">
+                                 <div>
+                                     <h3>KARTU UJIAN CBT</h3>
+                                     <p>${organizerName}</p>
+                                 </div>
+                             </div>
+                             <div class="content">
+                                 <table>
+                                     <tr><td width="55">Nama</td><td width="10">:</td><td><strong>${t.participant_name || '-'}</strong></td></tr>
+                                     <tr><td>Sekolah</td><td>:</td><td>${t.participant_school || '-'}</td></tr>
+                                     <tr><td>Jenjang</td><td>:</td><td>${t.kategori_jenjang || '-'}</td></tr>
+                                     <tr><td>Mapel</td><td>:</td><td>${t.jenis_soal || '-'}</td></tr>
+                                 </table>
+                                 <div class="token-box">
+                                     <span class="lbl">TOKEN LOGIN:</span>
+                                     <span class="token">${t.code}</span>
+                                 </div>
+                             </div>
+                         </div>
+                     `;
+                 });
+
+                 const htmlContent = `
+                     <!DOCTYPE html><html><head><title>Cetak_Kartu_Ujian</title>
+                     <style>
+                         @page { size: 215.9mm 330.2mm; margin: 10mm; } /* Ukuran Kertas F4 */
+                         body { font-family: 'Helvetica Neue', Helvetica, Arial, sans-serif; margin: 0; padding: 0; display: flex; flex-wrap: wrap; align-content: flex-start; justify-content: space-between; gap: 4mm; background: #fff; }
+                         .card { width: calc(50% - 2mm); height: 58mm; box-sizing: border-box; border: 2px dashed #94a3b8; border-radius: 8px; padding: 4mm; display: flex; flex-direction: column; break-inside: avoid; margin-bottom: 2mm;}
+                         .header { display: flex; align-items: center; border-bottom: 2px solid #0f4c81; padding-bottom: 2mm; margin-bottom: 2mm; }
+                         .header img { width: 12mm; height: 12mm; object-fit: contain; margin-right: 3mm; }
+                         .header h3 { margin: 0; font-size: 11px; font-weight: 900; color: #0f4c81; text-transform: uppercase; }
+                         .header p { margin: 2px 0 0; font-size: 8px; font-weight: bold; color: #475569; text-transform: uppercase; }
+                         .content table { width: 100%; border-collapse: collapse; font-size: 9px; color: #334155; }
+                         .content td { padding: 1.5px 0; vertical-align: top; line-height: 1.2; }
+                         .content td strong { text-transform: uppercase; font-size: 10px; color: #0f172a; }
+                         .token-box { margin-top: auto; background: #f8fafc; border: 1px solid #cbd5e1; border-radius: 4px; padding: 2mm; text-align: center; }
+                         .token-box .lbl { font-size: 7px; font-weight: bold; color: #64748b; display: block; margin-bottom: 2px; }
+                         .token-box .token { font-size: 15px; font-weight: 900; color: #2563eb; letter-spacing: 2px; font-family: monospace; }
+                         @media print { body { -webkit-print-color-adjust: exact; print-color-adjust: exact; } }
+                     </style></head><body>${cardsHTML}
+                     <script>window.onload = function() { setTimeout(function() { window.print(); window.close(); }, 500); }</script>
+                     </body></html>`;
+                 printWindow.document.open(); printWindow.document.write(htmlContent); printWindow.document.close();
+             };
+
              const saveMassEdit = async () => {
                  setIsSaving(true);
                  try {
@@ -1557,7 +1617,8 @@
                                     <option value="Semua">Semua Kelas/Sekolah</option>
                                     {uniqueClasses.map((cls, idx) => <option key={idx} value={cls}>{cls}</option>)}
                                 </select>
-                                <button onClick={downloadPeserta} className="bg-emerald-50 text-emerald-700 hover:bg-emerald-100 px-4 py-2.5 rounded-lg font-bold text-sm transition-colors flex items-center border border-emerald-200"><i className="fas fa-file-pdf mr-2"></i> Cetak PDF</button>
+                                <button onClick={cetakKartuUjian} className="bg-blue-50 text-blue-700 hover:bg-blue-100 px-4 py-2.5 rounded-lg font-bold text-sm transition-colors flex items-center border border-blue-200 shadow-sm"><i className="fas fa-id-badge mr-2"></i> Cetak Kartu</button>
+                                <button onClick={downloadPeserta} className="bg-emerald-50 text-emerald-700 hover:bg-emerald-100 px-4 py-2.5 rounded-lg font-bold text-sm transition-colors flex items-center border border-emerald-200"><i className="fas fa-file-pdf mr-2"></i> Daftar PDF</button>
                             </div>
                             
                             {selectedTokens.length > 0 && <button onClick={handleDeleteSelected} disabled={isSaving} className="bg-red-50 text-red-700 hover:bg-red-100 px-4 py-2.5 rounded-xl font-bold text-sm border border-red-200 transition-colors flex items-center"><i className="fas fa-trash-alt mr-2"></i> Hapus Terpilih ({selectedTokens.length})</button>}
@@ -1619,10 +1680,21 @@
                         <thead className="bg-slate-50 border-b">
                             <tr>
                                 <th className="p-4 text-center w-12"><input type="checkbox" className="w-4 h-4 cursor-pointer accent-blue-600 rounded" onChange={isMassEdit ? handleSelectAllEdit : handleSelectAll} checked={selectedTokens.length > 0 && selectedTokens.length === (isMassEdit ? displayedMassEditTokens.length : displayedTokens.length)} /></th>
-                                <th className="p-4 w-12 text-center">No</th><th className="p-4">Nama</th><th className="p-4">Sekolah/Kelas</th><th className="p-4 text-center">Jenjang</th><th className="p-4 text-center">Jenis Soal</th><th className="p-4">Token</th>
+                                <th className="p-4 w-12 text-center">No</th><th className="p-4">Nama</th><th className="p-4">Sekolah/Kelas</th>
                                 {isMassEdit ? (
-                                    <th className="p-4 min-w-[160px]">Status
-                                        <select onChange={(e) => { if(e.target.value) handleBulkEditStatus(e.target.value); e.target.value=''; }} className="mt-1.5 w-full border border-slate-300 rounded text-xs font-bold text-blue-700 bg-blue-50 p-1.5 outline-none cursor-pointer">
+                                    <th className="p-4 min-w-[130px] text-center">Jenjang
+                                        <select onChange={(e) => { if(e.target.value) handleBulkEditJenjang(e.target.value); e.target.value=''; }} className="mt-1.5 w-full border border-rose-200 rounded text-[10px] font-black text-rose-700 bg-rose-50 p-1.5 outline-none cursor-pointer">
+                                            <option value="">+ Set Terpilih</option>
+                                            <option value="SD/MI">SD/MI</option>
+                                            <option value="SMP/MTS">SMP/MTs</option>
+                                            <option value="SMA/SMK/MA">SMA/SMK/MA</option>
+                                        </select>
+                                    </th>
+                                ) : (<th className="p-4 text-center">Jenjang</th>)}
+                                <th className="p-4 text-center">Jenis Soal</th><th className="p-4">Token</th>
+                                {isMassEdit ? (
+                                    <th className="p-4 min-w-[140px]">Status
+                                        <select onChange={(e) => { if(e.target.value) handleBulkEditStatus(e.target.value); e.target.value=''; }} className="mt-1.5 w-full border border-blue-200 rounded text-xs font-bold text-blue-700 bg-blue-50 p-1.5 outline-none cursor-pointer">
                                             <option value="">+ Set Terpilih</option><option value="AVAILABLE">AVAILABLE</option><option value="USED">USED</option><option value="EXPIRED">EXPIRED</option>
                                         </select>
                                     </th>
