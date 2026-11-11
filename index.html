@@ -62,6 +62,18 @@
         .prevent-select { -webkit-user-select: none; -moz-user-select: none; -ms-user-select: none; user-select: none; }
         .animate-fade-in { animation: fadeIn 0.2s ease-out; }
         @keyframes fadeIn { from { opacity: 0; transform: scale(0.95); } to { opacity: 1; transform: scale(1); } }
+        <style>
+        /* Memaksa gambar di dalam editor agar merespons tombol perataan teks (Align) */
+        [contenteditable="true"] img {
+            display: inline-block;
+            max-width: 100%;
+            height: auto;
+            vertical-align: middle;
+            box-shadow: 0 1px 3px rgba(0,0,0,0.1);
+            border-radius: 4px;
+            margin: 4px;
+        }
+    </style>
     </style>
 
     <script>
@@ -217,6 +229,8 @@
                             <option value="\log_{a}{b}">Logaritma (log_a b)</option>
                             <option value="|x|">Nilai Mutlak (|x|)</option>
                             <option value="\pi">Phi (π)</option>
+                            <option value="^\circ">Derajat (°)</option>
+                            <option value="\times">Kali Silang (×)</option>
                         </select>
                         <button onMouseDown={async (e)=>{if(e) e.preventDefault(); const f = await showPrompt("Ketik manual kode LaTeX:"); if(f) insertMath(f);}} type="button" className="h-8 px-2 ml-1 text-slate-700 hover:bg-slate-200 rounded flex items-center text-xs font-semibold"><Calculator size={14} className="mr-1 text-primary"/> Manual</button>
                         <input type="file" ref={fileInputRef} onChange={handleImageUpload} accept="image/*" className="hidden" />
