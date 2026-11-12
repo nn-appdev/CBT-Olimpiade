@@ -827,7 +827,13 @@
                  const db = await getSupabase();
                  await db.from('results').insert([payload]);
                  alert("Ujian Selesai! Seluruh jawaban Anda telah direkam oleh sistem. Silakan tinggalkan ruangan.");
-                 window.location.reload(); 
+                 
+                 // 1. Hancurkan status sesi di React state dan Local Storage
+                 setActiveSession(null);
+                 window.localStorage.removeItem('cbt_active_session');
+                 
+                 // 2. Lempar paksa ke rute root (Login) dan bersihkan memori
+                 window.location.href = "/";
                } catch (err) { 
                  await showAlert("Gagal mengirim ujian: " + err.message); 
                  setIsSubmitting(false); setShowConfirm(false); 
@@ -1817,6 +1823,12 @@
              const [sortOrder, setSortOrder] = useState('DEFAULT');
              const [selectedResults, setSelectedResults] = useState([]);
              const [isDeleting, setIsDeleting] = useState(false);
+             useEffect(() => {
+                 if (selectedAnalysis) {
+                     // Beri jeda sedikit agar React selesai merender DOM dari modal pop-up
+                     setTimeout(() => { triggerMathRender(); }, 100);
+                 }
+             }, [selectedAnalysis]);
 
              const getResultFolder = (r) => {
                  const firstQId = r.detail?.detailedResults?.find(x => x.qId !== 'SYS_CHEATS')?.qId;
@@ -1978,7 +1990,11 @@
                      <html>
                      <head>
                          <title>Detail_Jawaban_${studentName.replace(/\s+/g, '_')}</title>
+                         <!-- Memuat CSS KaTeX -->
                          <link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/katex@0.16.8/dist/katex.min.css">
+                         <!-- Memuat Library JS KaTeX -->
+                         <script defer src="https://cdn.jsdelivr.net/npm/katex@0.16.8/dist/katex.min.js"><\/script>
+                         <script defer src="https://cdn.jsdelivr.net/npm/katex@0.16.8/dist/contrib/auto-render.min.js"><\/script>
                          <style>
                              body { font-family: 'Helvetica Neue', Helvetica, Arial, sans-serif; padding: 20px; color:#333; }
                              .header { text-align: center; border-bottom: 2px solid #1e293b; padding-bottom: 15px; margin-bottom: 25px; }
@@ -1988,6 +2004,7 @@
                              th, td { border: 1px solid #cbd5e1; padding: 12px; vertical-align: top; }
                              th { background-color: #f8fafc; color: #475569; font-size: 12px; text-transform: uppercase; letter-spacing:0.5px; }
                              img { max-width: 100%; height: auto; max-height: 200px; border-radius: 4px; display: block; margin: 8px 0; }
+                             .math-tex { font-size: 1.15em; font-weight: normal; }
                              @media print { 
                                  @page { margin: 1cm; }
                                  body { padding: 0; -webkit-print-color-adjust: exact; print-color-adjust: exact; }
@@ -2011,8 +2028,25 @@
                              <tbody>${rowsHTML}</tbody>
                          </table>
                          <script>
-                             window.onload = function() { setTimeout(function() { window.print(); window.close(); }, 800); }
-                         <${'/'}script>
+                             document.addEventListener("DOMContentLoaded", function() {
+                                 // Tunggu 500ms tambahan untuk memastikan skrip CDN KaTeX selesai diunduh
+                                 setTimeout(function() {
+                                     if (window.renderMathInElement) {
+                                         window.renderMathInElement(document.body, {
+                                             delimiters: [
+                                                 {left: '$$', right: '$$', display: true},
+                                                 {left: '$', right: '$', display: false},
+                                                 {left: '\\(', right: '\\)', display: false},
+                                                 {left: '\\[', right: '\\]', display: true}
+                                             ],
+                                             throwOnError : false
+                                         });
+                                     }
+                                     // Lakukan pencetakan dan penutupan jendela setelah render matematika selesai
+                                     setTimeout(function() { window.print(); window.close(); }, 800);
+                                 }, 500);
+                             });
+                         <\/script>
                      </body>
                      </html>
                  `;
