@@ -1044,7 +1044,10 @@
                 <div className="flex-1 flex flex-col h-screen overflow-hidden print:h-auto print:block">
                   <header className="bg-white border-b border-slate-200 px-8 py-5 flex justify-between items-center sticky top-0 z-10 print:hidden">
                     <div className="flex items-center gap-4"><button className="lg:hidden text-slate-400 hover:text-slate-800" onClick={() => setIsMobileMenuOpen(true)}><Menu size={24}/></button><h2 className="text-2xl font-black text-slate-800 tracking-tight">{title}</h2></div>
-                    <span className="text-xs font-bold px-3 py-1.5 bg-success/10 text-success border border-success/20 rounded-lg flex items-center shadow-sm"><Cloud size={14} className="mr-1.5"/> Online</span>
+                    <div className="flex items-center gap-3">
+                        <button onClick={fetchSupabaseData} className="text-xs font-bold px-3 py-1.5 bg-blue-50 text-blue-600 border border-blue-200 rounded-lg flex items-center shadow-sm hover:bg-blue-100 transition-colors" title="Muat Ulang Data Database"><i className="fas fa-sync-alt mr-1.5"></i> Refresh</button>
+                        <span className="text-xs font-bold px-3 py-1.5 bg-success/10 text-success border border-success/20 rounded-lg flex items-center shadow-sm"><Cloud size={14} className="mr-1.5"/> Online</span>
+                    </div>
                   </header>
                   <main className="flex-1 overflow-y-auto p-6 lg:p-8 print:p-0 bg-background">{children}</main>
                 </div>
@@ -2747,6 +2750,7 @@
           const AdminReports = () => {
              const [filterFolder, setFilterFolder] = useState('Semua');
              const [filterKategori, setFilterKategori] = useState('Semua Kategori');
+             const [sortOrder, setSortOrder] = useState('SCORE_DESC');
              
              const getResultFolder = (r) => {
                  const firstQId = r.detail?.detailedResults?.find(x => x.qId !== 'SYS_CHEATS')?.qId;
@@ -2766,19 +2770,31 @@
                  }
                  return matchFolder && matchKategori;
              }).sort((a, b) => {
-                 // 1. Urutkan berdasarkan Skor Akhir (Tertinggi ke Terendah)
-                 if (b.score !== a.score) return b.score - a.score;
-                 // 2. Jika skor sama, urutkan berdasarkan Waktu Pengerjaan Tercepat
                  const timeA = (a.endTime || 0) - (a.startTime || 0);
                  const timeB = (b.endTime || 0) - (b.startTime || 0);
-                 return timeA - timeB; 
+                 
+                 if (sortOrder === 'SCORE_DESC') {
+                     if (b.score !== a.score) return b.score - a.score;
+                     return timeA - timeB; // Tercepat (angka kecil) di atas jika skor seri
+                 } else if (sortOrder === 'SCORE_ASC') {
+                     if (a.score !== b.score) return a.score - b.score;
+                     return timeA - timeB; // Tetap tercepat di atas jika skor seri
+                 } else if (sortOrder === 'NAME_ASC') {
+                     return (a.participant?.name || '').localeCompare(b.participant?.name || '');
+                 }
+                 return 0;
              });
              
              return (
                 <AdminLayout title="Cetak Laporan">
                    <div className="mb-8 bg-white p-5 rounded-3xl border border-slate-100 shadow-sm flex justify-between items-center print:hidden">
-                      <div className="flex gap-4 items-center">
-                          <div className="text-slate-500 font-bold text-sm mr-4">Pratinjau Laporan</div>
+                      <div className="flex flex-wrap gap-3 items-center">
+                          <div className="text-slate-500 font-bold text-sm mr-2 hidden sm:block">Pratinjau Laporan</div>
+                          <select value={sortOrder} onChange={e=>setSortOrder(e.target.value)} className="border border-slate-300 rounded-lg p-2 text-sm font-black text-slate-700 bg-slate-50 outline-none cursor-pointer shadow-sm">
+                              <option value="SCORE_DESC">Ranking Tertinggi</option>
+                              <option value="SCORE_ASC">Ranking Terendah</option>
+                              <option value="NAME_ASC">Nama Siswa A - Z</option>
+                          </select>
                           <select value={filterKategori} onChange={e=>setFilterKategori(e.target.value)} className="border border-slate-300 rounded-lg p-2 text-sm font-bold text-rose-700 outline-none cursor-pointer">
                               <option value="Semua Kategori">Semua Jenjang</option><option value="SD/MI">SD/MI</option><option value="SMP/MTS">SMP/MTs</option><option value="SMA/SMK/MA">SMA/SMK/MA</option>
                           </select>
