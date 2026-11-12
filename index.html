@@ -1617,6 +1617,29 @@
 
              return (
                <AdminLayout title="Token Ujian">
+                   {/* WIDGET DASHBOARD TOKEN */}
+                 <div className="grid grid-cols-2 md:grid-cols-4 gap-4 mb-6 animate-fade-in">
+                     <div className="bg-white p-5 rounded-2xl border border-slate-100 shadow-sm flex flex-col items-center text-center">
+                         <div className="w-10 h-10 rounded-xl bg-blue-100 text-blue-600 flex justify-center items-center mb-2"><Database size={20}/></div>
+                         <div className="text-slate-400 font-bold text-[10px] uppercase tracking-widest mb-1">Total Token Data</div>
+                         <div className="text-2xl font-black text-slate-800">{actualTokens.length}</div>
+                     </div>
+                     <div className="bg-white p-5 rounded-2xl border border-slate-100 shadow-sm flex flex-col items-center text-center">
+                         <div className="w-10 h-10 rounded-xl bg-emerald-100 text-emerald-600 flex justify-center items-center mb-2"><CheckCircle size={20}/></div>
+                         <div className="text-slate-400 font-bold text-[10px] uppercase tracking-widest mb-1">Token Aktif (Available)</div>
+                         <div className="text-2xl font-black text-slate-800">{actualTokens.filter(t => t.status === 'AVAILABLE').length}</div>
+                     </div>
+                     <div className="bg-white p-5 rounded-2xl border border-slate-100 shadow-sm flex flex-col items-center text-center">
+                         <div className="w-10 h-10 rounded-xl bg-rose-100 text-rose-600 flex justify-center items-center mb-2"><User size={20}/></div>
+                         <div className="text-slate-400 font-bold text-[10px] uppercase tracking-widest mb-1">Token Digunakan (Used)</div>
+                         <div className="text-2xl font-black text-slate-800">{actualTokens.filter(t => t.status === 'USED').length}</div>
+                     </div>
+                     <div className="bg-white p-5 rounded-2xl border border-slate-100 shadow-sm flex flex-col items-center text-center">
+                         <div className="w-10 h-10 rounded-xl bg-amber-100 text-amber-600 flex justify-center items-center mb-2"><AlertCircle size={20}/></div>
+                         <div className="text-slate-400 font-bold text-[10px] uppercase tracking-widest mb-1">Menunggu Akses</div>
+                         <div className="text-2xl font-black text-slate-800">{actualTokens.filter(t => t.status === 'AVAILABLE' || !t.status).length}</div>
+                     </div>
+                 </div>
                  <div className="bg-white p-4 rounded-xl border mb-6 flex flex-wrap gap-3 items-center shadow-sm">
                     {!isMassEdit ? (
                         <>
@@ -2143,7 +2166,14 @@
                                     <td className="p-4 text-center font-bold text-blue-600 text-xs tracking-wider uppercase">{folderName}</td>
                                     <td className="p-4 text-center"><div className="font-bold text-slate-700">{earned} <span className="text-xs text-slate-400 font-normal">/ {maxP}</span></div></td>
                                     <td className="p-4 text-center font-black text-emerald-600 text-lg">{r.score}</td>
-                                    <td className="p-4 text-center"><button onClick={() => setSelectedAnalysis(r)} className="text-blue-600 bg-blue-50 px-3 py-1.5 rounded-lg text-xs font-bold hover:bg-blue-100 transition-colors shadow-sm">Lihat Detail</button></td>
+                                    <td className="p-4 flex justify-center gap-2">
+                                        <button onClick={() => setSelectedAnalysis(r)} className="text-blue-600 bg-blue-50 px-3 py-1.5 rounded-lg text-xs font-bold hover:bg-blue-100 transition-colors shadow-sm" title="Lihat Detail UI"><Eye size={14} /></button>
+                                        <button onClick={() => {
+                                            // Memanfaatkan fungsi cetak yang sudah ada dengan menyuntikkan data spesifik
+                                            setSelectedAnalysis(r);
+                                            setTimeout(() => { document.getElementById('btn-hidden-print-pdf')?.click(); }, 100);
+                                        }} className="text-emerald-600 bg-emerald-50 px-3 py-1.5 rounded-lg text-xs font-bold hover:bg-emerald-100 transition-colors shadow-sm" title="Unduh PDF"><i className="fas fa-file-pdf"></i></button>
+                                    </td>
                                 </tr>
                             )})}
                             {processedResults.length === 0 && <tr><td colSpan="8" className="text-center p-8 text-slate-500 font-bold bg-slate-50">Belum ada data hasil ujian yang masuk.</td></tr>}
@@ -2549,18 +2579,31 @@
             
           const AdminItemAnalysis = () => {
             const [filterFolder, setFilterFolder] = useState('Semua');
-            const availableFolders = [...new Set([...questions.map(q => q.folder || 'Utama')])];
+            const [filterKategori, setFilterKategori] = useState('Semua Kategori'); // TAMBAHKAN INI
+            const availableFolders = [...new Set([...questions.map(q => q.folder || 'Utama')])];           
 
             const filteredQuestions = filterFolder === 'Semua' ? questions : questions.filter(q => (q.folder || 'Utama') === filterFolder);
+            
+            const filteredResults = results.filter(r => {
+                 let matchKategori = true;
+                 if (filterKategori !== 'Semua Kategori') {
+                     const txt = `${r.participant?.school || ''}`.toUpperCase();
+                     if (filterKategori === 'SD/MI') matchKategori = /\b(SD|SDN|MI|MIS|MIM)\b/.test(txt);
+                     else if (filterKategori === 'SMP/MTS') matchKategori = /\b(SMP|SMPN|MTS|MTsN)\b/.test(txt);
+                     else if (filterKategori === 'SMA/SMK/MA') matchKategori = /\b(SMA|SMAN|SMK|SMKN|MA|MAN)\b/.test(txt);
+                 }
+                 return matchKategori;
+            });
+
             const analysisData = filteredQuestions.map(q => {
                 let correct = 0, wrong = 0, empty = 0;
-                results.forEach(r => {
+                filteredResults.forEach(r => {
                     const details = Array.isArray(r.detail?.detailedResults) ? r.detail.detailedResults : [];
                     const d = details.find(x => x.qId === q.id);
                     if (!d || d.isEmpty) empty++; else if (d.isCorrect) correct++; else wrong++;
                 });
 
-                const total = results.length;
+                const total = filteredResults.length;
                 const percentageCorrect = total > 0 ? ((correct / total) * 100).toFixed(1) : 0;
                 
                 let diffLabel = "N/A";
@@ -2611,13 +2654,18 @@
                 printWindow.document.open(); printWindow.document.write(htmlContent); printWindow.document.close();
             };
 
-            return (
+           return (
               <AdminLayout title="Analisis Butir Soal">
                 <div className="flex justify-between mb-4 bg-white p-4 rounded-xl border shadow-sm items-center">
-                    <select value={filterFolder} onChange={e => setFilterFolder(e.target.value)} className="border border-slate-300 rounded-lg p-2 text-sm font-bold outline-none text-primary cursor-pointer">
-                        <option value="Semua">Semua Folder Soal</option>
-                        {availableFolders.map(f => <option key={f} value={f}>{f}</option>)}
-                    </select>
+                    <div className="flex gap-2">
+                        <select value={filterKategori} onChange={e => setFilterKategori(e.target.value)} className="border border-slate-300 rounded-lg p-2 text-sm font-bold outline-none text-rose-700 cursor-pointer">
+                            <option value="Semua Kategori">Semua Jenjang</option><option value="SD/MI">SD/MI</option><option value="SMP/MTS">SMP/MTs</option><option value="SMA/SMK/MA">SMA/SMK/MA</option>
+                        </select>
+                        <select value={filterFolder} onChange={e => setFilterFolder(e.target.value)} className="border border-slate-300 rounded-lg p-2 text-sm font-bold outline-none text-primary cursor-pointer">
+                            <option value="Semua">Semua Folder Soal</option>
+                            {availableFolders.map(f => <option key={f} value={f}>{f}</option>)}
+                        </select>
+                    </div>
                     <button onClick={printAnalysisPDF} className="bg-emerald-600 text-white px-4 py-2 rounded-lg text-sm font-bold shadow-md hover:bg-emerald-700 transition-colors"><i className="fas fa-file-pdf mr-2"></i>Cetak Laporan PDF</button>
                 </div>
                 <div className="bg-primary/10 border border-primary/20 rounded-2xl p-6 mb-8 flex flex-wrap gap-4 items-center text-xs font-bold tracking-wider text-primary shadow-sm">
