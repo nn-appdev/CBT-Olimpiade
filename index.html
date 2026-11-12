@@ -1320,6 +1320,7 @@
              const [filterKategori, setFilterKategori] = useState('Semua Kategori');
              const [editFilter, setEditFilter] = useState('Semua');
              const [sortOrder, setSortOrder] = useState('DEFAULT');
+             const [searchQuery, setSearchQuery] = useState('');
 
              const actualTokens = tokens.filter(t => !t.code.startsWith('SYS_SETTING_') && !t.code.startsWith('SYS_FOLDER_'));
              const uniqueClasses = [...new Set(actualTokens.map(t => t.participant_school).filter(Boolean))];
@@ -1344,7 +1345,8 @@
                      else if (filterKategori === 'SMP/MTS') matchKategori = /\b(SMP|SMPN|MTS|MTsN)\b/.test(txt);
                      else if (filterKategori === 'SMA/SMK/MA') matchKategori = /\b(SMA|SMAN|SMK|SMKN|MA|MAN)\b/.test(txt);
                  }
-                 return matchSchool && matchKategori;
+                 const matchSearch = (t.participant_name || '').toLowerCase().includes(searchQuery.toLowerCase()) || (t.code || '').toLowerCase().includes(searchQuery.toLowerCase());
+            return matchSchool && matchKategori && matchSearch;
              });
              if (sortOrder === 'NAME_ASC') displayedTokens.sort((a,b) => (a.participant_name || '').localeCompare(b.participant_name || ''));
              else if (sortOrder === 'NAME_DESC') displayedTokens.sort((a,b) => (b.participant_name || '').localeCompare(a.participant_name || ''));
@@ -1625,6 +1627,10 @@
                             </button>
                             
                             <div className="flex flex-wrap items-center gap-2 bg-slate-50 border border-slate-200 rounded-xl p-1 ml-auto">
+                                <div className="relative">
+                                    <i className="fas fa-search absolute left-3 top-1/2 -translate-y-1/2 text-slate-400"></i>
+                                    <input type="text" placeholder="Cari Nama / Token..." value={searchQuery} onChange={e => setSearchQuery(e.target.value)} className="pl-9 pr-3 py-2 bg-white border border-slate-300 text-sm font-medium rounded-lg outline-none focus:border-blue-500 w-48 transition-all" />
+                                </div>
                                 <select value={sortOrder} onChange={e=>setSortOrder(e.target.value)} className="bg-white border border-slate-300 text-sm font-medium rounded-lg px-2 py-2.5 outline-none focus:border-blue-500 cursor-pointer">
                                     <option value="DEFAULT">Urutan Acak</option><option value="NAME_ASC">Nama A-Z</option><option value="NAME_DESC">Nama Z-A</option>
                                 </select>
@@ -2542,7 +2548,11 @@
           };
             
           const AdminItemAnalysis = () => {
-            const analysisData = questions.map(q => {
+            const [filterFolder, setFilterFolder] = useState('Semua');
+            const availableFolders = [...new Set([...questions.map(q => q.folder || 'Utama')])];
+
+            const filteredQuestions = filterFolder === 'Semua' ? questions : questions.filter(q => (q.folder || 'Utama') === filterFolder);
+            const analysisData = filteredQuestions.map(q => {
                 let correct = 0, wrong = 0, empty = 0;
                 results.forEach(r => {
                     const details = Array.isArray(r.detail?.detailedResults) ? r.detail.detailedResults : [];
@@ -2576,8 +2586,62 @@
                 return { ...q, correct, wrong, empty, total, percentageCorrect, diffLabel, discrimination };
             });
 
-            return (
+            const printAnalysisPDF = () => {
+                const printWindow = window.open('', '_blank');
+                let rowsHTML = '';
+                analysisData.forEach((d, idx) => {
+                    const tempDiv = document.createElement("div"); tempDiv.innerHTML = d.question || "";
+                    rowsHTML += `<tr><td class="text-center">${idx + 1}</td><td>${tempDiv.textContent}</td><td class="text-center">${d.percentageCorrect}%</td><td class="text-center">${d.discrimination}</td><td class="text-center"><strong>${d.diffLabel}</strong></td></tr>`;
+                });
+                const htmlContent = `
+                    <!DOCTYPE html><html><head><title>Analisis_Butir_Soal</title>
+                    <style>
+                        body { font-family: sans-serif; padding: 20px; color: #333; }
+                        h2 { text-align: center; border-bottom: 2px solid #333; padding-bottom: 10px; text-transform: uppercase; }
+                        table { width: 100%; border-collapse: collapse; margin-top: 20px; font-size: 12px; }
+                        th, td { border: 1px solid #ddd; padding: 8px; text-align: left; }
+                        th { background-color: #f4f4f4; text-align: center; }
+                        .text-center { text-align: center; }
+                    </style></head><body>
+                        <h2>Laporan Analisis Butir Soal</h2><p>Folder Soal: <strong>${filterFolder}</strong></p>
+                        <table><thead><tr><th style="width:5%;">No</th><th style="width:60%;">Pertanyaan</th><th style="width:10%;">% Benar</th><th style="width:10%;">Daya Pembeda</th><th style="width:15%;">Status</th></tr></thead>
+                        <tbody>${rowsHTML}</tbody></table>
+                        <script>window.onload = function() { setTimeout(function() { window.print(); window.close(); }, 500); }<${'/'}script>
+                    </body></html>`;
+                printWindow.document.open(); printWindow.document.write(htmlContent); printWindow.document.close();
+            };
+              <thead className="bg-slate-100 uppercase font-black text-xs text-slate-700 tracking-widest"><tr className="border-y-2 border-slate-800">
+                            <th className="py-4 px-4 text-center w-12">Rank</th>
+                            <th className="py-4 px-4">Nama Peserta</th>
+                            <th className="py-4 px-4">Asal Sekolah</th>
+                            <th className="py-4 px-4 text-center w-20">Pelanggaran</th>
+                            <th className="py-4 px-4 text-center w-20">ITO</th>
+                            <th className="py-4 px-4 text-center w-24">Skor Akhir</th>
+                         </tr></thead>
+                         <tbody>
+                            {processedResults.map((r, i) => {
+                               const cheatCount = r.detail?.detailedResults?.find(x => x.qId === 'SYS_CHEATS')?.cheatCount || 0;
+                               return (
+                               <tr key={i} className="border-b border-slate-200 font-bold">
+                                  <td className="py-3 px-4 text-center text-slate-500">{i+1}</td>
+                                  <td className="py-3 px-4 uppercase text-slate-900">{r.participant?.name}</td>
+                                  <td className="py-3 px-4 text-slate-600">{r.participant?.school}</td>
+                                  <td className="py-3 px-4 text-center text-rose-600">{cheatCount > 0 ? `${cheatCount}x Keluar Layar` : '-'}</td>
+                                  <td className="py-3 px-4 text-center text-primary">{r.detail?.summary?.ito || 0}</td>
+                                  <td className="py-3 px-4 text-center text-success text-base">{r.score}</td>
+                               </tr>
+                               );
+                            })}
+                         </tbody>
+              return (
               <AdminLayout title="Analisis Butir Soal">
+                  <div className="flex justify-between mb-4 bg-white p-4 rounded-xl border shadow-sm items-center">
+                    <select value={filterFolder} onChange={e => setFilterFolder(e.target.value)} className="border border-slate-300 rounded-lg p-2 text-sm font-bold outline-none text-primary cursor-pointer">
+                        <option value="Semua">Semua Folder Soal</option>
+                        {availableFolders.map(f => <option key={f} value={f}>{f}</option>)}
+                    </select>
+                    <button onClick={printAnalysisPDF} className="bg-emerald-600 text-white px-4 py-2 rounded-lg text-sm font-bold shadow-md hover:bg-emerald-700 transition-colors"><i className="fas fa-file-pdf mr-2"></i>Cetak Laporan PDF</button>
+                </div>
                 <div className="bg-primary/10 border border-primary/20 rounded-2xl p-6 mb-8 flex flex-wrap gap-4 items-center text-xs font-bold tracking-wider text-primary shadow-sm">
                     <span className="uppercase text-primary-800"><i className="fas fa-chart-line mr-2"></i> Indikator Kesukaran Empiris:</span>
                     <span className="bg-white text-success px-3 py-1.5 rounded-lg shadow-sm">Sangat Mudah (&gt;85%)</span>
@@ -2622,11 +2686,41 @@
           };
 
           const AdminReports = () => {
-             let processedResults = [...results].sort(compareResults);
+             const [filterFolder, setFilterFolder] = useState('Semua');
+             const [filterKategori, setFilterKategori] = useState('Semua Kategori');
+             
+             const getResultFolder = (r) => {
+                 const firstQId = r.detail?.detailedResults?.find(x => x.qId !== 'SYS_CHEATS')?.qId;
+                 return firstQId ? (questions.find(x => x.id === firstQId)?.folder || 'Utama') : 'Utama';
+             };
+             
+             const availableFolders = [...new Set([...questions.map(q => q.folder || 'Utama')])];
+
+             let processedResults = results.filter(r => {
+                 const matchFolder = filterFolder === 'Semua' || getResultFolder(r) === filterFolder;
+                 let matchKategori = true;
+                 if (filterKategori !== 'Semua Kategori') {
+                     const txt = `${r.participant?.school || ''} ${getResultFolder(r) || ''}`.toUpperCase();
+                     if (filterKategori === 'SD/MI') matchKategori = /\b(SD|SDN|MI|MIS|MIM)\b/.test(txt);
+                     else if (filterKategori === 'SMP/MTS') matchKategori = /\b(SMP|SMPN|MTS|MTsN)\b/.test(txt);
+                     else if (filterKategori === 'SMA/SMK/MA') matchKategori = /\b(SMA|SMAN|SMK|SMKN|MA|MAN)\b/.test(txt);
+                 }
+                 return matchFolder && matchKategori;
+             }).sort(compareResults);
              return (
                 <AdminLayout title="Cetak Laporan">
                    <div className="mb-8 bg-white p-5 rounded-3xl border border-slate-100 shadow-sm flex justify-between items-center print:hidden">
                       <div className="text-slate-500 font-bold text-sm">Pratinjau Laporan Peringkat Kelas Olimpiade</div>
+                       <div className="mb-8 bg-white p-5 rounded-3xl border border-slate-100 shadow-sm flex justify-between items-center print:hidden">
+                      <div className="flex gap-4 items-center">
+                          <div className="text-slate-500 font-bold text-sm mr-4">Pratinjau Laporan</div>
+                          <select value={filterKategori} onChange={e=>setFilterKategori(e.target.value)} className="border border-slate-300 rounded-lg p-2 text-sm font-bold text-rose-700 outline-none cursor-pointer">
+                              <option value="Semua Kategori">Semua Jenjang</option><option value="SD/MI">SD/MI</option><option value="SMP/MTS">SMP/MTs</option><option value="SMA/SMK/MA">SMA/SMK/MA</option>
+                          </select>
+                          <select value={filterFolder} onChange={e=>setFilterFolder(e.target.value)} className="border border-slate-300 rounded-lg p-2 text-sm font-bold text-blue-700 outline-none cursor-pointer">
+                              <option value="Semua">Semua Folder Soal</option>{availableFolders.map(f => <option key={f} value={f}>{f}</option>)}
+                          </select>
+                      </div>
                       <button onClick={() => window.print()} className="bg-primary hover:bg-primary-700 text-white px-6 py-3 rounded-xl font-black text-sm flex items-center shadow-lg transition-all"><i className="fas fa-print mr-2"></i> Cetak (A4)</button>
                    </div>
                    
