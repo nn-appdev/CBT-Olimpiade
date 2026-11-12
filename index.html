@@ -2796,14 +2796,16 @@
                       </div>
                       
                       <table className="w-full text-left border-collapse text-sm">
-                         <thead className="bg-slate-100 uppercase font-black text-xs text-slate-700 tracking-widest"><tr className="border-y-2 border-slate-800">
-                            <th className="py-4 px-4 text-center w-12">Rank</th>
-                            <th className="py-4 px-4">Nama Peserta</th>
-                            <th className="py-4 px-4">Asal Sekolah</th>
-                            <th className="py-4 px-4 text-center w-20">Pelanggaran</th>
-                            <th className="py-4 px-4 text-center w-24">Waktu</th>
-                            <th className="py-4 px-4 text-center w-24">Skor Akhir</th>
-                         </tr></thead>
+                         <thead className="bg-slate-100 uppercase font-black text-xs text-slate-700 tracking-widest">
+                            <tr className="border-y-2 border-slate-800">
+                               <th className="py-4 px-4 text-center w-12">Rank</th>
+                               <th className="py-4 px-4">Nama Peserta</th>
+                               <th className="py-4 px-4">Asal Sekolah</th>
+                               <th className="py-4 px-4 text-center w-20">Pelanggaran</th>
+                               <th className="py-4 px-4 text-center w-24">Waktu</th>
+                               <th className="py-4 px-4 text-center w-24">Skor Akhir</th>
+                            </tr>
+                         </thead>
                          <tbody>
                             {processedResults.map((r, i) => {
                                const cheatCount = r.detail?.detailedResults?.find(x => x.qId === 'SYS_CHEATS')?.cheatCount || 0;
@@ -2813,28 +2815,14 @@
                                const timeStr = minutes > 0 ? `${minutes}m ${seconds}s` : `${seconds}s`;
                                
                                return (
-                               <tr key={i} className="border-b border-slate-200 font-bold">
-                                  <td className="py-3 px-4 text-center text-slate-500">{i+1}</td>
-                                  <td className="py-3 px-4 uppercase text-slate-900">{r.participant?.name}</td>
-                                  <td className="py-3 px-4 text-slate-600">{r.participant?.school}</td>
-                                  <td className="py-3 px-4 text-center text-rose-600">{cheatCount > 0 ? `${cheatCount}x` : '-'}</td>
-                                  <td className="py-3 px-4 text-center text-blue-600 font-medium">{timeStr}</td>
-                                  <td className="py-3 px-4 text-center text-success text-base">{r.score}</td>
-                               </tr>
-                               );
-                            })}
-                         </tbody>
-                            {processedResults.map((r, i) => {
-                               const cheatCount = r.detail?.detailedResults?.find(x => x.qId === 'SYS_CHEATS')?.cheatCount || 0;
-                               return (
-                               <tr key={i} className="border-b border-slate-200 font-bold">
-                                  <td className="py-3 px-4 text-center text-slate-500">{i+1}</td>
-                                  <td className="py-3 px-4 uppercase text-slate-900">{r.participant?.name}</td>
-                                  <td className="py-3 px-4 text-slate-600">{r.participant?.school}</td>
-                                  <td className="py-3 px-4 text-center text-rose-600">{cheatCount > 0 ? `${cheatCount}x Keluar Layar` : '-'}</td>
-                                  <td className="py-3 px-4 text-center text-primary">{r.detail?.summary?.ito || 0}</td>
-                                  <td className="py-3 px-4 text-center text-success text-base">{r.score}</td>
-                               </tr>
+                                  <tr key={i} className="border-b border-slate-200 font-bold">
+                                     <td className="py-3 px-4 text-center text-slate-500">{i+1}</td>
+                                     <td className="py-3 px-4 uppercase text-slate-900">{r.participant?.name}</td>
+                                     <td className="py-3 px-4 text-slate-600">{r.participant?.school}</td>
+                                     <td className="py-3 px-4 text-center text-rose-600">{cheatCount > 0 ? `${cheatCount}x` : '-'}</td>
+                                     <td className="py-3 px-4 text-center text-blue-600 font-medium">{timeStr}</td>
+                                     <td className="py-3 px-4 text-center text-success text-base">{r.score}</td>
+                                  </tr>
                                );
                             })}
                          </tbody>
