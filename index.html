@@ -421,10 +421,12 @@
           const activeQuestions = isAdminLoggedIn 
             ? questions 
             : questions.filter(q => {
-                const targetFolder = (activeSession && activeSession.participant && activeSession.participant.jenis_soal) 
-                    ? activeSession.participant.jenis_soal 
-                    : (activeFolder || 'Utama');
-                return String(q.folder || 'Utama').trim().toLowerCase() === String(targetFolder).trim().toLowerCase();
+                // WAJIB: Peserta HANYA boleh mendapatkan soal dari folder (jenis_soal) yang terikat pada tokennya
+                if (activeSession && activeSession.participant && activeSession.participant.jenis_soal) {
+                    return String(q.folder || 'Utama').trim().toLowerCase() === String(activeSession.participant.jenis_soal).trim().toLowerCase();
+                }
+                // Kunci absolut: Jika sesi tidak terdefinisi dengan jelas, kosongkan array soal
+                return false; 
             });
 
           useEffect(() => {
@@ -467,14 +469,14 @@
                     }
                 }
 
-                // Menyimpan jenis_soal (Peminatan Folder) saat Login
+                // Menyimpan identitas, jenjang, dan folder (jenis_soal) secara absolut saat Login
                 setActiveSession({ 
                     token: tokenObj.code, 
                     participant: { 
                         name: tokenObj.participant_name || 'Peserta', 
                         school: tokenObj.participant_school || organizerName, 
                         nis: '', 
-                        grade: '6',
+                        kategori_jenjang: tokenObj.kategori_jenjang || 'SD/MI',
                         jenis_soal: tokenObj.jenis_soal || 'Utama' 
                     }, 
                     answers: {}, flagged: [], status: 'SETUP' 
@@ -559,7 +561,10 @@
                        <User className="text-primary mb-3" size={40} />
                        <strong className="text-xl text-slate-800 block">{activeSession.participant.name}</strong>
                        <span className="text-slate-500 font-medium mb-2">{activeSession.participant.school}</span>
-                       <span className="text-xs font-bold text-white bg-primary px-3 py-1 rounded-md uppercase tracking-widest">{activeSession.participant.jenis_soal || 'Utama'}</span>
+                       <div className="flex gap-2 justify-center mt-1">
+                           <span className="text-[10px] font-black text-rose-600 bg-rose-100 px-3 py-1 rounded-md uppercase tracking-widest border border-rose-200">{activeSession.participant.kategori_jenjang || 'SD/MI'}</span>
+                           <span className="text-[10px] font-black text-white bg-primary px-3 py-1 rounded-md uppercase tracking-widest shadow-sm">{activeSession.participant.jenis_soal || 'Utama'}</span>
+                       </div>
                     </div>
                     <ul className="space-y-4 text-slate-700 font-medium mb-8">
                          <li className="flex items-start"><CheckCircle className="text-success mr-3 mt-1 flex-shrink-0" size={18}/> Ujian terdiri dari <b>{activeQuestions.length} soal</b>.</li>
