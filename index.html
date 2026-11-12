@@ -62,7 +62,7 @@
         .prevent-select { -webkit-user-select: none; -moz-user-select: none; -ms-user-select: none; user-select: none; }
         .animate-fade-in { animation: fadeIn 0.2s ease-out; }
         @keyframes fadeIn { from { opacity: 0; transform: scale(0.95); } to { opacity: 1; transform: scale(1); } }
-        <style>
+        
         /* Memaksa gambar di dalam editor agar merespons tombol perataan teks (Align) */
         [contenteditable="true"] img {
             display: inline-block;
@@ -73,7 +73,6 @@
             border-radius: 4px;
             margin: 4px;
         }
-    </style>
     </style>
 
     <script>
@@ -827,8 +826,8 @@
                try {
                  const db = await getSupabase();
                  await db.from('results').insert([payload]);
-                 setActiveSession({ ...activeSession, status: 'SUBMITTED', score: result.finalScore, submittedResult: { summary, detailedResults: finalDetailedResults } });
-                 navigate('/dashboard');
+                 alert("Ujian Selesai! Seluruh jawaban Anda telah direkam oleh sistem. Silakan tinggalkan ruangan.");
+                 window.location.reload(); 
                } catch (err) { 
                  await showAlert("Gagal mengirim ujian: " + err.message); 
                  setIsSubmitting(false); setShowConfirm(false); 
@@ -988,7 +987,7 @@
 
             const handleLogin = async (e) => {
                 e.preventDefault(); 
-                if(u==='admin' && p==='bismillah') {
+                if(u==='admin' && p==='BismillahMea26') {
                     setIsAdminLoggedIn(true); 
                     navigate('/admin/dashboard');
                 } else {
