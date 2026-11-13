@@ -2197,6 +2197,10 @@
                                 const earned = details.reduce((sum, d) => sum + (d.pointsEarned || 0), 0);
                                 const maxP = details.reduce((sum, d) => sum + (d.questionMaxPoints || 0), 0);
                                 const folderName = getResultFolder(r);
+                                
+                                // RUMUS MUTLAK SKALA 100: (Skor Didapat / Total Skor) * 100
+                                const finalGrade = maxP > 0 ? parseFloat(((earned / maxP) * 100).toFixed(2)) : 0;
+
                                 return (
                                 <tr key={r.id} className={`border-b transition-colors ${selectedResults.includes(r.id) ? 'bg-blue-50/40' : 'hover:bg-slate-50'}`}>
                                     <td className="p-4 text-center"><input type="checkbox" className="w-4 h-4 cursor-pointer accent-blue-600 rounded" checked={selectedResults.includes(r.id)} onChange={() => handleSelectResult(r.id)} /></td>
@@ -2205,17 +2209,17 @@
                                     <td className="p-4 font-medium text-slate-600">{r.participant?.school}</td>
                                     <td className="p-4 text-center font-bold text-blue-600 text-xs tracking-wider uppercase">{folderName}</td>
                                     <td className="p-4 text-center"><div className="font-bold text-slate-700">{earned} <span className="text-xs text-slate-400 font-normal">/ {maxP}</span></div></td>
-                                    <td className="p-4 text-center font-black text-emerald-600 text-lg">{r.score}</td>
+                                    <td className="p-4 text-center font-black text-emerald-600 text-lg">{finalGrade}</td>
                                     <td className="p-4 flex justify-center gap-2">
                                         <button onClick={() => setSelectedAnalysis(r)} className="text-blue-600 bg-blue-50 px-3 py-1.5 rounded-lg text-xs font-bold hover:bg-blue-100 transition-colors shadow-sm" title="Lihat Detail UI"><Eye size={14} /></button>
                                         <button onClick={() => {
-                                            // Memanfaatkan fungsi cetak yang sudah ada dengan menyuntikkan data spesifik
                                             setSelectedAnalysis(r);
                                             setTimeout(() => { document.getElementById('btn-hidden-print-pdf')?.click(); }, 100);
                                         }} className="text-emerald-600 bg-emerald-50 px-3 py-1.5 rounded-lg text-xs font-bold hover:bg-emerald-100 transition-colors shadow-sm" title="Unduh PDF"><i className="fas fa-file-pdf"></i></button>
                                     </td>
                                 </tr>
-                            )})}
+                                )
+                            })}
                             {processedResults.length === 0 && <tr><td colSpan="8" className="text-center p-8 text-slate-500 font-bold bg-slate-50">Belum ada data hasil ujian yang masuk.</td></tr>}
                         </tbody>
                     </table>
