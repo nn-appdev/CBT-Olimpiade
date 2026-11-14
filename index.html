@@ -676,8 +676,27 @@
                 }
             };
 
-            if (!activeSession || examQuestions.length === 0 || !currentQuestion) return <div className="min-h-screen flex items-center justify-center font-medium text-slate-500">Memuat soal...</div>;
-              // PENGAMAN MUTLAK: Memaksa `options` menjadi Array, mencegah crash dari String/Data Korup
+            // 1. Validasi Sesi Dasar
+            if (!activeSession || examQuestions.length === 0) return <div className="min-h-screen flex items-center justify-center font-medium text-slate-500">Memuat sesi ujian...</div>;
+            
+            // 2. Cegah crash jika soal spesifik hilang/korup dari database
+            if (!currentQuestion) {
+                 return (
+                     <div className="min-h-screen bg-slate-50 flex items-center justify-center p-4">
+                         <div className="bg-white p-8 rounded-2xl shadow-xl text-center max-w-md border-t-4 border-amber-500 animate-fade-in">
+                             <div className="w-16 h-16 bg-amber-100 text-amber-600 rounded-full flex items-center justify-center mx-auto mb-4"><i className="fas fa-file-excel text-2xl"></i></div>
+                             <h2 className="text-xl font-black text-slate-800 mb-2">Data Soal Korup</h2>
+                             <p className="text-slate-600 mb-6 font-medium">Soal nomor {examCurrentIndex + 1} mengalami kerusakan data. Harap lewati soal ini.</p>
+                             <div className="flex gap-3 justify-center">
+                                 <button onClick={() => changeQuestion(Math.max(0, examCurrentIndex - 1))} className="bg-slate-200 text-slate-700 px-4 py-2 rounded-lg font-bold">Sebelumnya</button>
+                                 <button onClick={() => changeQuestion(Math.min(examQuestions.length - 1, examCurrentIndex + 1))} className="bg-primary text-white px-4 py-2 rounded-lg font-bold">Lewati Soal</button>
+                             </div>
+                         </div>
+                     </div>
+                 );
+            }
+
+            // 3. PENGAMAN MUTLAK: Memaksa `options` menjadi Array, mencegah crash dari String/Data Korup
             let safeOptions = [];
             if (currentQuestion.type === 'MCQ') {
                 if (Array.isArray(currentQuestion.options)) {
