@@ -677,6 +677,18 @@
             };
 
             if (!activeSession || examQuestions.length === 0 || !currentQuestion) return <div className="min-h-screen flex items-center justify-center font-medium text-slate-500">Memuat soal...</div>;
+              // PENGAMAN MUTLAK: Memaksa `options` menjadi Array, mencegah crash dari String/Data Korup
+            let safeOptions = [];
+            if (currentQuestion.type === 'MCQ') {
+                if (Array.isArray(currentQuestion.options)) {
+                    safeOptions = currentQuestion.options;
+                } else if (typeof currentQuestion.options === 'string') {
+                    try {
+                        const parsed = JSON.parse(currentQuestion.options);
+                        safeOptions = Array.isArray(parsed) ? parsed : [];
+                    } catch(e) { safeOptions = []; }
+                }
+            }
             
             const currentAnswer = activeSession.answers[currentQuestion.id];
             const isFlagged = activeSession.flagged?.includes(currentQuestion.id);
@@ -711,12 +723,19 @@
                                 
                                 {currentQuestion.type === 'MCQ' && (
                                     <div className="space-y-3 relative z-10">
-                                    {(currentQuestion.options||[]).map(opt => (
-                                        <label key={opt.id} className={`flex items-start p-5 border-2 rounded-2xl transition-all ${canvasMode ? 'pointer-events-none' : 'cursor-pointer'} ${currentAnswer === opt.id ? 'border-primary bg-primary/5 shadow-md' : 'border-slate-100 hover:border-primary/30 hover:bg-slate-50'}`}>
-                                            <div className="flex items-center h-6 mt-0.5"><input type="radio" checked={currentAnswer === opt.id} onChange={() => handleAnswerChange(opt.id)} className="w-5 h-5 accent-primary" disabled={canvasMode} /></div>
-                                            <div className="ml-4 flex-1 flex text-slate-800"><span className="font-bold text-slate-400 w-8 mt-0.5">{opt.id}.</span><div className="flex-1 rich-text-content" dangerouslySetInnerHTML={{__html: opt.text}}></div></div>
+                                    {safeOptions.length > 0 ? safeOptions.map((opt, idx) => {
+                                        const optId = opt?.id || String.fromCharCode(65 + idx);
+                                        const optText = opt?.text || '';
+                                        return (
+                                        <label key={optId} className={`flex items-start p-5 border-2 rounded-2xl transition-all ${canvasMode ? 'pointer-events-none' : 'cursor-pointer'} ${currentAnswer === optId ? 'border-primary bg-primary/5 shadow-md' : 'border-slate-100 hover:border-primary/30 hover:bg-slate-50'}`}>
+                                            <div className="flex items-center h-6 mt-0.5"><input type="radio" checked={currentAnswer === optId} onChange={() => handleAnswerChange(optId)} className="w-5 h-5 accent-primary" disabled={canvasMode} /></div>
+                                            <div className="ml-4 flex-1 flex text-slate-800"><span className="font-bold text-slate-400 w-8 mt-0.5">{optId}.</span><div className="flex-1 rich-text-content" dangerouslySetInnerHTML={{__html: optText}}></div></div>
                                         </label>
-                                    ))}
+                                    )}) : (
+                                        <div className="p-4 bg-amber-50 text-amber-600 border border-amber-200 rounded-xl font-bold text-sm">
+                                            <i className="fas fa-exclamation-triangle mr-2"></i> Pilihan ganda untuk soal ini korup atau kosong di database. Harap klik tombol Lanjut.
+                                        </div>
+                                    )}
                                     </div>
                                 )}
 
