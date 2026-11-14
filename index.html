@@ -534,6 +534,11 @@
             if (!activeSession || !activeSession.participant) { navigate('/login'); return null; }
             
             const startExam = async () => {
+              if (activeQuestions.length === 0) {
+                  await showAlert("Gagal memulai. Tidak ada soal yang tersedia untuk folder ini.");
+                  return;
+              }
+
               setIsStarting(true);
               try {
                 const db = await getSupabase();
