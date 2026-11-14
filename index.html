@@ -245,7 +245,13 @@
             const stickyValue = window.localStorage.getItem(key);
             return stickyValue !== null ? JSON.parse(stickyValue) : defaultValue;
           });
-          useEffect(() => { window.localStorage.setItem(key, JSON.stringify(value)); }, [key, value]);
+          useEffect(() => { 
+              try {
+                  window.localStorage.setItem(key, JSON.stringify(value)); 
+              } catch (err) {
+                  console.error("Gagal menyimpan memori (Quota Penuh):", err);
+              }
+          }, [key, value]);
           return [value, setValue];
         }
 
@@ -544,12 +550,13 @@
                 const db = await getSupabase();
                 await db.from('tokens').update({ status: 'USED' }).eq('code', activeSession.token);
 
-                let sessionQuestions = JSON.parse(JSON.stringify(activeQuestions));
-                if (isRandomQ) sessionQuestions.sort(() => Math.random() - 0.5);
+                // ARSITEKTUR BARU: Hanya simpan urutan ID Soal (kilobytes), BUKAN seluruh objek soal (Megabytes)
+                let sessionQuestionIds = activeQuestions.map(q => q.id);
+                if (isRandomQ) sessionQuestionIds.sort(() => Math.random() - 0.5);
                 
                 setActiveSession(prev => ({ 
                     ...prev, status: 'ACTIVE', startTime: new Date().getTime(), 
-                    durationLimit: 120 * 60 * 1000, sessionQuestions, examCurrentIndex: 0 
+                    durationLimit: 120 * 60 * 1000, sessionQuestionIds, examCurrentIndex: 0 
                 }));
                 navigate('/exam');
               } catch (err) { 
@@ -605,7 +612,10 @@
             }, [activeSession?.status]);
 
             const examCurrentIndex = activeSession?.examCurrentIndex || 0;
-            const examQuestions = activeSession?.sessionQuestions || activeQuestions;
+            // Membangun ulang array soal berdasarkan susunan ID yang ringan
+            const examQuestions = activeSession?.sessionQuestionIds 
+                ? activeSession.sessionQuestionIds.map(id => activeQuestions.find(q => q.id === id)).filter(Boolean)
+                : activeQuestions;
             const currentQuestion = examQuestions[examCurrentIndex];
             
             const changeQuestion = (idx) => {
@@ -852,7 +862,9 @@
 
              if (!activeSession || activeSession.status !== 'ACTIVE') { navigate('/'); return null; }
 
-             const examQuestions = activeSession?.sessionQuestions || activeQuestions;
+             const examQuestions = activeSession?.sessionQuestionIds 
+                ? activeSession.sessionQuestionIds.map(id => activeQuestions.find(q => q.id === id)).filter(Boolean)
+                : activeQuestions;
              const ansQ = examQuestions.filter(q => activeSession.answers[q.id] && String(activeSession.answers[q.id]).trim() !== '').length;
 
              const handleFinalSubmit = async () => {
