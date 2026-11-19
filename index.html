@@ -2881,25 +2881,7 @@
                  }
                  return matchFolder && matchKategori;
              }).sort((a, b) => {
-                 const infoA = getGradeInfo(a);
-                 const infoB = getGradeInfo(b);
-                 const timeA = (a.endTime || 0) - (a.startTime || 0);
-                 const timeB = (b.endTime || 0) - (b.startTime || 0);
-                 
-                 if (sortOrder === 'SCORE_DESC') {
-                     if (infoB.finalGrade !== infoA.finalGrade) return infoB.finalGrade - infoA.finalGrade;
-                     if (infoA.cheatCount !== infoB.cheatCount) return infoA.cheatCount - infoB.cheatCount;
-                     return timeA - timeB;
-                 } else if (sortOrder === 'SCORE_ASC') {
-                     if (infoA.finalGrade !== infoB.finalGrade) return infoA.finalGrade - infoB.finalGrade;
-                     if (infoB.cheatCount !== infoA.cheatCount) return infoB.cheatCount - infoA.cheatCount;
-                     return timeB - timeA;
-                 } else if (sortOrder === 'NAME_ASC') {
-                     return (a.participant?.name || '').localeCompare(b.participant?.name || '');
-                 }
-                 return 0;
-             });
-                 
+                                 
                  const infoA = getGradeInfo(a);
                  const infoB = getGradeInfo(b);
                  const timeA = (a.endTime || 0) - (a.startTime || 0);
