@@ -2918,34 +2918,7 @@
                  }
                  return 0;
              });
-
-                 // 2. Ambil jumlah pelanggaran (default 0 jika bersih)
-                 const getCheats = (r) => r.detail?.detailedResults?.find(x => x.qId === 'SYS_CHEATS')?.cheatCount || 0;
-
-                 const gradeA = getGrade(a);
-                 const gradeB = getGrade(b);
-                 const cheatA = getCheats(a);
-                 const cheatB = getCheats(b);
-                 const timeA = (a.endTime || 0) - (a.startTime || 0);
-                 const timeB = (b.endTime || 0) - (b.startTime || 0);
-                 
-                 if (sortOrder === 'SCORE_DESC') {
-                     // Prioritas 1: Nilai tertinggi
-                     if (gradeB !== gradeA) return gradeB - gradeA;
-                     // Prioritas 2: Pelanggaran paling sedikit (0 pelanggaran selalu di atas yang melanggar)
-                     if (cheatA !== cheatB) return cheatA - cheatB;
-                     // Prioritas 3: Waktu tercepat
-                     return timeA - timeB;
-                 } else if (sortOrder === 'SCORE_ASC') {
-                     // Kebalikan mutlak untuk Ranking Terendah
-                     if (gradeA !== gradeB) return gradeA - gradeB;
-                     if (cheatB !== cheatA) return cheatB - cheatA;
-                     return timeB - timeA;
-                 } else if (sortOrder === 'NAME_ASC') {
-                     return (a.participant?.name || '').localeCompare(b.participant?.name || '');
-                 }
-                 return 0;
-             });
+                
              return (
                 <AdminLayout title="Cetak Laporan">
                    <div className="mb-8 bg-white p-5 rounded-3xl border border-slate-100 shadow-sm flex justify-between items-center print:hidden">
