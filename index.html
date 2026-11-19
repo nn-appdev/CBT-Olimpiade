@@ -1502,7 +1502,7 @@
                  const jenjang = prompt("Kategori Jenjang (Ketik: SD/MI, SMP/MTS, atau SMA/SMK/MA):", "SD/MI") || "SD/MI";
                  const folderStr = availableFolders.join(", ");
                  const jenis = prompt(`Ketik Folder Soal/Peminatan (${folderStr}):`, availableFolders[0]) || availableFolders[0];
-                 const newCode = `MEA-${Math.random().toString(36).substring(2,6).toUpperCase()}`;
+                 const newCode = `OMBN-${Math.random().toString(36).substring(2,6).toUpperCase()}`;
                  setIsSaving(true);
                  try { 
                      const db = await getSupabase(); 
