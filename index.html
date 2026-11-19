@@ -2854,7 +2854,7 @@
                  const firstQId = r.detail?.detailedResults?.find(x => x.qId !== 'SYS_CHEATS')?.qId;
                  return firstQId ? (questions.find(x => x.id === firstQId)?.folder || 'Utama') : 'Utama';
              };
-             
+
              const getGradeInfo = (r) => {
                  const cheatCount = r.detail?.detailedResults?.find(x => x.qId === 'SYS_CHEATS')?.cheatCount || 0;
                  const details = Array.isArray(r.detail?.detailedResults) ? r.detail.detailedResults : [];
@@ -2862,13 +2862,13 @@
                  const maxP = details.reduce((sum, d) => sum + (d.questionMaxPoints || 0), 0);
                  const baseGrade = maxP > 0 ? (earned / maxP) * 100 : 0;
 
-                 // Aturan Penalti: Pelanggaran > 3 dikurangi (pelanggaran - 3) * 4, minimal skor 0
                  const penalty = cheatCount > 3 ? (cheatCount - 3) * 4 : 0;
                  const finalGrade = parseFloat(Math.max(0, baseGrade - penalty).toFixed(2));
 
                  return { cheatCount, penalty, finalGrade };
              };
-              const availableFolders = [...new Set([...questions.map(q => q.folder || 'Utama')])];
+             
+             const availableFolders = [...new Set([...questions.map(q => q.folder || 'Utama')])];
 
              let processedResults = results.filter(r => {
                  const matchFolder = filterFolder === 'Semua' || getResultFolder(r) === filterFolder;
@@ -2885,7 +2885,7 @@
                  const infoB = getGradeInfo(b);
                  const timeA = (a.endTime || 0) - (a.startTime || 0);
                  const timeB = (b.endTime || 0) - (b.startTime || 0);
-
+                 
                  if (sortOrder === 'SCORE_DESC') {
                      if (infoB.finalGrade !== infoA.finalGrade) return infoB.finalGrade - infoA.finalGrade;
                      if (infoA.cheatCount !== infoB.cheatCount) return infoA.cheatCount - infoB.cheatCount;
