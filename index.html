@@ -48,6 +48,9 @@
         .rich-text-content { white-space: pre-wrap; word-wrap: break-word; line-height: 1.6; }
         .rich-text-content p { min-height: 1.5rem; margin-bottom: 0.5rem; }
         .rich-text-content img { max-width: 100%; height: auto; border-radius: 8px; margin: 8px 0; display: inline-block; box-shadow: 0 1px 3px rgba(0,0,0,0.1); }
+        .rich-text-content table { width: 100%; border-collapse: collapse; margin: 10px 0; white-space: normal; font-size: 0.95em; }
+        .rich-text-content th, .rich-text-content td { border: 1px solid #94a3b8; padding: 6px 10px; min-width: 40px; vertical-align: top; }
+        .rich-text-content th { background-color: #f1f5f9; font-weight: 700; text-align: center; }
         .math-tex { font-size: 1.15em; font-weight: normal; }
         ::-webkit-scrollbar { width: 8px; height: 8px; }
         ::-webkit-scrollbar-track { background: #f1f5f9; }
@@ -193,6 +196,44 @@
                 const mathHTML = ` <span class="math-tex">\\(${formula}\\)</span> `;
                 editorRef.current.focus(); document.execCommand('insertHTML', false, mathHTML); handleInput();
             };
+            const insertTable = async (e) => {
+                if (e) e.preventDefault();
+                // Simpan posisi kursor sebelum modal prompt mengambil fokus
+                const sel = window.getSelection();
+                const savedRange = sel && sel.rangeCount > 0 ? sel.getRangeAt(0).cloneRange() : null;
+
+                const size = await showPrompt("Masukkan ukuran tabel (Baris x Kolom), contoh: 3x3", "3x3");
+                if (!size) return;
+
+                const match = size.trim().toLowerCase().match(/^(\d+)\s*[x×,]\s*(\d+)$/);
+                if (!match) return;
+
+                const rows = Math.min(Math.max(parseInt(match[1], 10), 1), 20);
+                const cols = Math.min(Math.max(parseInt(match[2], 10), 1), 10);
+
+                let tableHTML = '<table style="width:100%;border-collapse:collapse;margin:8px 0;"><thead><tr>';
+                for (let c = 0; c < cols; c++) {
+                    tableHTML += `<th style="border:1px solid #94a3b8;padding:6px 10px;background:#f1f5f9;">Judul ${c + 1}</th>`;
+                }
+                tableHTML += '</tr></thead><tbody>';
+                for (let r = 1; r < rows; r++) {
+                    tableHTML += '<tr>';
+                    for (let c = 0; c < cols; c++) {
+                        tableHTML += '<td style="border:1px solid #94a3b8;padding:6px 10px;">&nbsp;</td>';
+                    }
+                    tableHTML += '</tr>';
+                }
+                // Tambah paragraf kosong di bawah tabel agar kursor tidak terjebak di dalam sel
+                tableHTML += '</tbody></table><p><br></p>';
+
+                editorRef.current.focus();
+                if (savedRange && editorRef.current.contains(savedRange.commonAncestorContainer)) {
+                    sel.removeAllRanges();
+                    sel.addRange(savedRange);
+                }
+                document.execCommand('insertHTML', false, tableHTML);
+                handleInput();
+            };
 
             return (
                 <div className="border border-slate-300 rounded-lg overflow-hidden bg-white focus-within:border-primary focus-within:ring-1 transition-all shadow-sm">
@@ -206,6 +247,7 @@
                         <button onMouseDown={(e)=>execCmd('justifyRight', e)} type="button" className="w-8 h-8 text-slate-700 hover:bg-slate-200 rounded flex items-center justify-center"><i className="fas fa-align-right text-xs"></i></button>
                         <div className="w-px h-5 bg-slate-300 mx-1"></div>
                         <button onMouseDown={(e)=>{ if(e) e.preventDefault(); fileInputRef.current.click();}} type="button" className="h-8 px-2.5 text-slate-700 hover:bg-slate-200 rounded flex items-center text-xs font-semibold"><ImageIcon size={14} className="mr-1 text-success"/> Gambar</button>
+                        <button onMouseDown={insertTable} type="button" className="h-8 px-2.5 text-slate-700 hover:bg-slate-200 rounded flex items-center text-xs font-semibold"><i className="fas fa-table mr-1 text-indigo-600"></i> Tabel</button>
                         <div className="w-px h-5 bg-slate-300 mx-1"></div>
                         <select onChange={(e) => { if(e.target.value) { insertMath(e.target.value); e.target.value = ''; } }} className="h-8 px-2 bg-white hover:bg-slate-50 border border-slate-300 rounded text-xs font-bold text-primary outline-none cursor-pointer shadow-sm">
                             <option value="">+ Rumus Cepat</option>
