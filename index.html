@@ -196,43 +196,73 @@
                 const mathHTML = ` <span class="math-tex">\\(${formula}\\)</span> `;
                 editorRef.current.focus(); document.execCommand('insertHTML', false, mathHTML); handleInput();
             };
-            const insertTable = async (e) => {
-                if (e) e.preventDefault();
-                // Simpan posisi kursor sebelum modal prompt mengambil fokus
+            const insertTable = async (rowsArg = null, colsArg = null) => {
                 const sel = window.getSelection();
-                const savedRange = sel && sel.rangeCount > 0 ? sel.getRangeAt(0).cloneRange() : null;
-
-                const size = await showPrompt("Masukkan ukuran tabel (Baris x Kolom), contoh: 3x3", "3x3");
-                if (!size) return;
-
-                const match = size.trim().toLowerCase().match(/^(\d+)\s*[x×,]\s*(\d+)$/);
-                if (!match) return;
-
-                const rows = Math.min(Math.max(parseInt(match[1], 10), 1), 20);
-                const cols = Math.min(Math.max(parseInt(match[2], 10), 1), 10);
-
-                let tableHTML = '<table style="width:100%;border-collapse:collapse;margin:8px 0;"><thead><tr>';
-                for (let c = 0; c < cols; c++) {
-                    tableHTML += `<th style="border:1px solid #94a3b8;padding:6px 10px;background:#f1f5f9;">Judul ${c + 1}</th>`;
+                let savedRange = null;
+                if (sel && sel.rangeCount > 0 && editorRef.current && editorRef.current.contains(sel.anchorNode)) {
+                    savedRange = sel.getRangeAt(0).cloneRange();
                 }
-                tableHTML += '</tr></thead><tbody>';
-                for (let r = 1; r < rows; r++) {
-                    tableHTML += '<tr>';
-                    for (let c = 0; c < cols; c++) {
-                        tableHTML += '<td style="border:1px solid #94a3b8;padding:6px 10px;">&nbsp;</td>';
+
+                let rows = rowsArg;
+                let cols = colsArg;
+
+                if (!rows || !cols) {
+                    const size = await showPrompt("Masukkan ukuran tabel (Baris x Kolom), contoh: 3x3", "3x3");
+                    if (!size) return;
+                    const match = size.trim().toLowerCase().match(/^(\d+)\s*[x×*,\s]\s*(\d+)$/);
+                    if (!match) {
+                        alert("Format salah. Ketik angka Baris x Kolom, misalnya: 3x3");
+                        return;
                     }
-                    tableHTML += '</tr>';
+                    rows = Math.min(Math.max(parseInt(match[1], 10), 1), 20);
+                    cols = Math.min(Math.max(parseInt(match[2], 10), 1), 10);
                 }
-                // Tambah paragraf kosong di bawah tabel agar kursor tidak terjebak di dalam sel
-                tableHTML += '</tbody></table><p><br></p>';
 
-                editorRef.current.focus();
-                if (savedRange && editorRef.current.contains(savedRange.commonAncestorContainer)) {
-                    sel.removeAllRanges();
-                    sel.addRange(savedRange);
+                // Bangun elemen tabel langsung via DOM (tidak bergantung pada execCommand)
+                const wrapper = document.createElement('div');
+                let html = '<table style="width:100%;border-collapse:collapse;margin:10px 0;white-space:normal;background:#ffffff;"><thead><tr>';
+                for (let c = 0; c < cols; c++) {
+                    html += `<th style="border:1px solid #64748b;padding:6px 10px;background:#f1f5f9;font-weight:700;text-align:center;">Kolom ${c + 1}</th>`;
                 }
-                document.execCommand('insertHTML', false, tableHTML);
-                handleInput();
+                html += '</tr></thead><tbody>';
+                for (let r = 1; r < rows; r++) {
+                    html += '<tr>';
+                    for (let c = 0; c < cols; c++) {
+                        html += '<td style="border:1px solid #64748b;padding:6px 10px;min-width:40px;">&nbsp;</td>';
+                    }
+                    html += '</tr>';
+                }
+                html += '</tbody></table>';
+                wrapper.innerHTML = html;
+
+                const tableEl = wrapper.firstChild;
+                const spacer = document.createElement('p');
+                spacer.innerHTML = '<br>';
+
+                // Jeda 50ms agar modal selesai tertutup sebelum menyuntikkan tabel ke editor
+                setTimeout(() => {
+                    if (!editorRef.current) return;
+                    editorRef.current.focus();
+
+                    if (savedRange && editorRef.current.contains(savedRange.commonAncestorContainer)) {
+                        savedRange.deleteContents();
+                        savedRange.insertNode(spacer);
+                        savedRange.insertNode(tableEl);
+                    } else {
+                        editorRef.current.appendChild(tableEl);
+                        editorRef.current.appendChild(spacer);
+                    }
+
+                    const firstCell = tableEl.querySelector('th, td');
+                    if (firstCell) {
+                        const range = document.createRange();
+                        range.selectNodeContents(firstCell);
+                        const s = window.getSelection();
+                        s.removeAllRanges();
+                        s.addRange(range);
+                    }
+                    handleInput();
+                }, 50);
             };
 
             return (
@@ -247,8 +277,27 @@
                         <button onMouseDown={(e)=>execCmd('justifyRight', e)} type="button" className="w-8 h-8 text-slate-700 hover:bg-slate-200 rounded flex items-center justify-center"><i className="fas fa-align-right text-xs"></i></button>
                         <div className="w-px h-5 bg-slate-300 mx-1"></div>
                         <button onMouseDown={(e)=>{ if(e) e.preventDefault(); fileInputRef.current.click();}} type="button" className="h-8 px-2.5 text-slate-700 hover:bg-slate-200 rounded flex items-center text-xs font-semibold"><ImageIcon size={14} className="mr-1 text-success"/> Gambar</button>
-                        <button onMouseDown={insertTable} type="button" className="h-8 px-2.5 text-slate-700 hover:bg-slate-200 rounded flex items-center text-xs font-semibold"><i className="fas fa-table mr-1 text-indigo-600"></i> Tabel</button>
-                        <div className="w-px h-5 bg-slate-300 mx-1"></div>
+                        <select
+                            onChange={(e) => {
+                                const val = e.target.value;
+                                e.target.value = '';
+                                if (!val) return;
+                                if (val === 'CUSTOM') insertTable();
+                                else {
+                                    const [r, c] = val.split('x').map(Number);
+                                    insertTable(r, c);
+                                }
+                            }}
+                            className="h-8 px-2 bg-white hover:bg-slate-50 border border-slate-300 rounded text-xs font-bold text-indigo-700 outline-none cursor-pointer shadow-sm"
+                        >
+                            <option value="">+ Tabel</option>
+                            <option value="2x2">Tabel 2 × 2</option>
+                            <option value="3x2">Tabel 3 × 2</option>
+                            <option value="3x3">Tabel 3 × 3</option>
+                            <option value="4x3">Tabel 4 × 3</option>
+                            <option value="4x4">Tabel 4 × 4</option>
+                            <option value="CUSTOM">Ukuran Custom...</option>
+                        </select>
                         <select onChange={(e) => { if(e.target.value) { insertMath(e.target.value); e.target.value = ''; } }} className="h-8 px-2 bg-white hover:bg-slate-50 border border-slate-300 rounded text-xs font-bold text-primary outline-none cursor-pointer shadow-sm">
                             <option value="">+ Rumus Cepat</option>
                             <option value="x">Variabel (x)</option>
