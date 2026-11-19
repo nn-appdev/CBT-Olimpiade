@@ -2855,7 +2855,20 @@
                  return firstQId ? (questions.find(x => x.id === firstQId)?.folder || 'Utama') : 'Utama';
              };
              
-             const availableFolders = [...new Set([...questions.map(q => q.folder || 'Utama')])];
+             const getGradeInfo = (r) => {
+                 const cheatCount = r.detail?.detailedResults?.find(x => x.qId === 'SYS_CHEATS')?.cheatCount || 0;
+                 const details = Array.isArray(r.detail?.detailedResults) ? r.detail.detailedResults : [];
+                 const earned = details.reduce((sum, d) => sum + (d.pointsEarned || 0), 0);
+                 const maxP = details.reduce((sum, d) => sum + (d.questionMaxPoints || 0), 0);
+                 const baseGrade = maxP > 0 ? (earned / maxP) * 100 : 0;
+
+                 // Aturan Penalti: Pelanggaran > 3 dikurangi (pelanggaran - 3) * 4, minimal skor 0
+                 const penalty = cheatCount > 3 ? (cheatCount - 3) * 4 : 0;
+                 const finalGrade = parseFloat(Math.max(0, baseGrade - penalty).toFixed(2));
+
+                 return { cheatCount, penalty, finalGrade };
+             };
+              const availableFolders = [...new Set([...questions.map(q => q.folder || 'Utama')])];
 
              let processedResults = results.filter(r => {
                  const matchFolder = filterFolder === 'Semua' || getResultFolder(r) === filterFolder;
@@ -2868,13 +2881,24 @@
                  }
                  return matchFolder && matchKategori;
              }).sort((a, b) => {
-                 // 1. Hitung Nilai Skala 100 agar konsisten 100% dengan kolom SKOR AKHIR
-                 const getGrade = (r) => {
-                     const details = Array.isArray(r.detail?.detailedResults) ? r.detail.detailedResults : [];
-                     const earned = details.reduce((sum, d) => sum + (d.pointsEarned || 0), 0);
-                     const maxP = details.reduce((sum, d) => sum + (d.questionMaxPoints || 0), 0);
-                     return maxP > 0 ? parseFloat(((earned / maxP) * 100).toFixed(2)) : 0;
-                 };
+                 const infoA = getGradeInfo(a);
+                 const infoB = getGradeInfo(b);
+                 const timeA = (a.endTime || 0) - (a.startTime || 0);
+                 const timeB = (b.endTime || 0) - (b.startTime || 0);
+                 
+                 if (sortOrder === 'SCORE_DESC') {
+                     if (infoB.finalGrade !== infoA.finalGrade) return infoB.finalGrade - infoA.finalGrade;
+                     if (infoA.cheatCount !== infoB.cheatCount) return infoA.cheatCount - infoB.cheatCount;
+                     return timeA - timeB;
+                 } else if (sortOrder === 'SCORE_ASC') {
+                     if (infoA.finalGrade !== infoB.finalGrade) return infoA.finalGrade - infoB.finalGrade;
+                     if (infoB.cheatCount !== infoA.cheatCount) return infoB.cheatCount - infoA.cheatCount;
+                     return timeB - timeA;
+                 } else if (sortOrder === 'NAME_ASC') {
+                     return (a.participant?.name || '').localeCompare(b.participant?.name || '');
+                 }
+                 return 0;
+             });
 
                  // 2. Ambil jumlah pelanggaran (default 0 jika bersih)
                  const getCheats = (r) => r.detail?.detailedResults?.find(x => x.qId === 'SYS_CHEATS')?.cheatCount || 0;
@@ -2942,14 +2966,7 @@
                          </thead>
                          <tbody>
                             {processedResults.map((r, i) => {
-                               const cheatCount = r.detail?.detailedResults?.find(x => x.qId === 'SYS_CHEATS')?.cheatCount || 0;
-                               const details = Array.isArray(r.detail?.detailedResults) ? r.detail.detailedResults : [];
-                               const earned = details.reduce((sum, d) => sum + (d.pointsEarned || 0), 0);
-                               const maxP = details.reduce((sum, d) => sum + (d.questionMaxPoints || 0), 0);
-                               
-                               // RUMUS MUTLAK SKALA 100 UNTUK LAPORAN CETAK
-                               const finalGrade = maxP > 0 ? parseFloat(((earned / maxP) * 100).toFixed(2)) : 0;
-                               
+                               const { cheatCount, penalty, finalGrade } = getGradeInfo(r);
                                const durationMs = (r.endTime || 0) - (r.startTime || 0);
                                const minutes = Math.floor(durationMs / 60000);
                                const seconds = ((durationMs % 60000) / 1000).toFixed(0);
@@ -2960,7 +2977,10 @@
                                      <td className="py-3 px-4 text-center text-slate-500">{i+1}</td>
                                      <td className="py-3 px-4 uppercase text-slate-900">{r.participant?.name}</td>
                                      <td className="py-3 px-4 text-slate-600">{r.participant?.school}</td>
-                                     <td className="py-3 px-4 text-center text-rose-600">{cheatCount > 0 ? `${cheatCount}x` : '-'}</td>
+                                     <td className="py-3 px-4 text-center text-rose-600">
+                                        {cheatCount > 0 ? `${cheatCount}x` : '-'}
+                                        {penalty > 0 && <div className="text-[10px] font-normal text-rose-500">(-{penalty})</div>}
+                                     </td>
                                      <td className="py-3 px-4 text-center text-blue-600 font-medium">{timeStr}</td>
                                      <td className="py-3 px-4 text-center text-success text-base">{finalGrade}</td>
                                   </tr>
